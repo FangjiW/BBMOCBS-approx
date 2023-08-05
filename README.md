@@ -1,6 +1,8 @@
-# find the Pareto-optimal frontier from node 20002 to node 164983 in the BAY map.
-./bin/multiobj -m dataset/room-32-32-4/room-32-32-4.map -c dataset/room-32-32-4/room-32-32-4.cost --config dataset/room-32-32-4/room-32-32-4.config -n 2 -o output.txt
+./bin/multiobj -o output.txt -m ../dataset/random-32-32-10/random-32-32-10.map --config ../dataset/random-32-32-10/random-32-32-10-random-1.scen -c ../dataset/random-32-32-10/random-32-32-10.cost -a Apex -n 20 -e 0.1
 
-# d > 2 情况还差NonDomVec
+剩余：
 
-# DominanceChecker.cpp  line 53为什么需要做这个dominance check
+1. d > 2 情况还差NonDomVec
+2. 没加waiting cost
+3. conflict check 差边的检测
+4. SIPP

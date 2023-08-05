@@ -249,8 +249,8 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
     }else{
         NonDomJointPath(root_node, eps);
     }
-    std::cout << "here" << root_node->joint_path_list.size();
-    getchar();
+    // std::cout << "here" << root_node->joint_path_list.size();
+    // getchar();
     root_node->rep_id_list = root_node->joint_path_list.front().second;
     root_node->rep_apex_cost = root_node->joint_path_list.front().first;
     // for(auto i : root_node->rep_id_list){
@@ -388,8 +388,8 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
                 NonDomJointPath(new_node, eps);
             }
 
-            std::cout << "here" << new_node->joint_path_list.size();
-            getchar();
+            // std::cout << "here" << new_node->joint_path_list.size();
+            // getchar();
             
             new_node->rep_id_list = new_node->joint_path_list.front().second;
             new_node->rep_apex_cost = new_node->joint_path_list.front().first;
