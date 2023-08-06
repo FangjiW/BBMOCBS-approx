@@ -232,7 +232,6 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
 {
     auto _t0 = std::chrono::high_resolution_clock::now();    // record time
     HLQueue open_list;
-    // size_t agent_num;
 
     ConflictChecker conflict_checker;
 
@@ -272,8 +271,6 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
         // std::cout << open_list.size() << std::endl;
         // getchar();
         bool is_filtered = DomPrune(hsolution_costs, node->joint_path_list, eps);
-        // std::cout << "DomPrune finish";
-        // getchar();
         if(node->joint_path_list.empty()){
             continue;
         }
@@ -292,7 +289,7 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
         //     std::cout << cft[0] <<"    " << cft[1] << "    " << cft[2] << "    " << cft[3] << std::endl;
         //     getchar();
         // }
-        if(cft.empty()){
+        if(std::get<2>(cft).empty()){
             std::vector<std::vector<size_t>> new_hsolution;
             CostVector  new_cost(node->rep_apex_cost.size(), 0);
             for(int i = 0; i < agent_num; i ++){
@@ -312,16 +309,18 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
                 node->rep_apex_cost = node->joint_path_list.front().first;
                 open_list.insert(node);
             }
-            // std::cout << "Add to solution";
-            // std::cout << open_list.size();
-            // getchar();
             continue;
         }
     // //  print confliction information
-    //     int id1 = cft[0] >= 0 ? cft[0] : -cft[0]-1;
-    //     int id2 = cft[1] >= 0 ? cft[1] : -cft[1]-1;
+    //     if(std::get<2>(cft).size() == 2){
+
+    //     int _id1 = std::get<0>(cft);
+    //     int _id2 = std::get<1>(cft);
+    //     int id1 = _id1 >= 0 ? _id1 : -_id1-1;
+    //     int id2 = _id2 >= 0 ? _id2 : -_id2-1;
     //     std::cout << std::endl << std::endl << "agent1: " << id1 << "  agent2: " << id2 << "  state: {" 
-    //         << cft[2]/32 << ", " << cft[2]%32 << "}    t:" << cft[3] << std::endl << "path1: ";
+    //         << std::get<2>(cft).front()/32 << ", " << std::get<2>(cft).front()%32
+    //          << "}    t:" << std::get<3>(cft) << std::endl << "path1: ";
     //     for(size_t ii : node->indiv_paths_list.at(id1)[node->rep_id_list.at(id1)]){
     //         std::cout << "{" << ii/32 << ", " << ii%32 << "}, ";
     //     }
@@ -353,6 +352,8 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
     //     }
     //     getchar();
 
+    //     }
+
         constraint_num ++;
         if (constraint_num % (500/agent_num) == 0) {
             auto tnow = std::chrono::high_resolution_clock::now(); // for timing.
@@ -360,46 +361,69 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
             std::cout << "[INFO] * Solver::Search, after " << constraint_num << " conflict splits " 
             << "       time = " << ((double)duration.count())/1000000.0 << std::endl;
         }
-        for(int i = 0; i < 2; i ++){
-            if(cft[i] < 0){
-                continue;
-            }
-            auto new_node = std::make_shared<HighLevelNode>(*node);
-            new_node->indiv_paths_list.at(cft[i]).clear();
-            new_node->indiv_apex_costs.at(cft[i]).clear();
-            new_node->indiv_real_costs.at(cft[i]).clear();
-            add_constraint(new_node->constraints, cft[i], cft[2], cft[3]);
-            // std::cout << "RUN AGENT " << cft[i] << std::endl;
-            // getchar();
-            single_run_map(graph_size, edges, start_end.at(cft[i]).first, start_end.at(cft[i]).second, vm["output"].as<std::string>(), 
-                    vm["algorithm"].as<std::string>(), ms, logger, vm["eps"].as<double>(), vm["cutoffTime"].as<int>(), 
-                    new_node->indiv_paths_list.at(cft[i]), new_node->indiv_apex_costs.at(cft[i]), new_node->indiv_real_costs.at(cft[i]), 
-                    new_node->constraints[cft[i]]); 
 
-            // std::cout << new_node->indiv_real_costs.at(cft[i]).size();
-            // getchar();
+        if(std::get<2>(cft).size() == 1){   // vertex confliction, split 1 or 2 constraints
+            for(int i = 0; i < 2; i ++){
+                int agent_id = i == 0 ? std::get<0>(cft) : std::get<1>(cft);
+                if(agent_id < 0){
+                    continue;
+                }
+                auto new_node = std::make_shared<HighLevelNode>(*node);
+                new_node->indiv_paths_list.at(agent_id).clear();
+                new_node->indiv_apex_costs.at(agent_id).clear();
+                new_node->indiv_real_costs.at(agent_id).clear();
+                add_constraint(new_node->constraints, agent_id, std::get<2>(cft).front(), std::get<3>(cft));
+                
 
-            if(new_node->indiv_paths_list.at(cft[i]).empty()){
-                continue;
-            }
-            if(vm["algorithm"].as<std::string>() == "Apex"){
-                NonDomJointPath(new_node, ms, eps);
-            }else{
-                NonDomJointPath(new_node, eps);
+                single_run_map(graph_size, edges, start_end.at(agent_id).first, start_end.at(agent_id).second, vm["output"].as<std::string>(), 
+                        vm["algorithm"].as<std::string>(), ms, logger, vm["eps"].as<double>(), vm["cutoffTime"].as<int>(), 
+                        new_node->indiv_paths_list.at(agent_id), new_node->indiv_apex_costs.at(agent_id), new_node->indiv_real_costs.at(agent_id), 
+                        new_node->constraints[agent_id]); 
+
+                if(new_node->indiv_paths_list.at(agent_id).empty()){
+                    continue;
+                }
+                if(vm["algorithm"].as<std::string>() == "Apex"){
+                    NonDomJointPath(new_node, ms, eps);
+                }else{
+                    NonDomJointPath(new_node, eps);
+                }
+                
+                new_node->rep_id_list = new_node->joint_path_list.front().second;
+                new_node->rep_apex_cost = new_node->joint_path_list.front().first;
+                open_list.insert(new_node);
             }
 
-            // std::cout << "here" << new_node->joint_path_list.size();
-            // getchar();
-            
-            new_node->rep_id_list = new_node->joint_path_list.front().second;
-            new_node->rep_apex_cost = new_node->joint_path_list.front().first;
-            open_list.insert(new_node);
-            // std::cout << new_node->indiv_paths_list.at(0)[0].at(0) << new_node->indiv_paths_list.at(0)[0].at(1) << std::endl;
-            // std::cout << new_node->indiv_paths_list.at(1)[0].at(0) << new_node->indiv_paths_list.at(1)[0].at(1) << std::endl;
-            // getchar();
+        }else{  //  edge confliction, split 4 constaints
+            for(int i = 0; i < 2; i++){     // 2 agents
+                int agent_id = i == 0 ? std::get<0>(cft) : std::get<1>(cft);
+                for(int j = 0; j < 2; j++){     // 2 constraints for each agent
+                    int constraint_id = j == 0 ? i : 1-i;
+                    auto new_node = std::make_shared<HighLevelNode>(*node);
+                    new_node->indiv_paths_list.at(agent_id).clear();
+                    new_node->indiv_apex_costs.at(agent_id).clear();
+                    new_node->indiv_real_costs.at(agent_id).clear();
+                    add_constraint(new_node->constraints, agent_id, std::get<2>(cft).at(constraint_id), 
+                            std::get<3>(cft)+j);
+                    single_run_map(graph_size, edges, start_end.at(agent_id).first, start_end.at(agent_id).second, vm["output"].as<std::string>(), 
+                        vm["algorithm"].as<std::string>(), ms, logger, vm["eps"].as<double>(), vm["cutoffTime"].as<int>(), 
+                        new_node->indiv_paths_list.at(agent_id), new_node->indiv_apex_costs.at(agent_id), new_node->indiv_real_costs.at(agent_id), 
+                        new_node->constraints[agent_id]); 
+
+                    if(new_node->indiv_paths_list.at(agent_id).empty()){
+                        continue;
+                    }
+                    if(vm["algorithm"].as<std::string>() == "Apex"){
+                        NonDomJointPath(new_node, ms, eps);
+                    }else{
+                        NonDomJointPath(new_node, eps);
+                    }
+                    new_node->rep_id_list = new_node->joint_path_list.front().second;
+                    new_node->rep_apex_cost = new_node->joint_path_list.front().first;
+                    open_list.insert(new_node);
+                }
+            }
         }
-        // std::cout << "Open List Size:    " << open_list.size() << std::endl;
-        // std::cout << "END ONE LOOP" << std::endl;
     }
     return constraint_num;
 }
@@ -413,12 +437,6 @@ bool more_than(JointPathTuple a, JointPathTuple b)
         }
     }
     return false;
-    // for(int i = 0; i < a->apex_cost.size(); i ++){
-    //     if(a->apex_cost.at(i) != b->apex_cost.at(i)){
-    //         return a->apex_cost.at(i) > b->apex_cost.at(i);
-    //     }
-    // }
-    // return false;
 }
 
 

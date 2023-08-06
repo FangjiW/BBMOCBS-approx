@@ -6,5 +6,5 @@ class ConflictChecker
 {
 public:
     ConflictChecker(){};
-    std::vector<int> is_conflict(HighLevelNodePtr node); // 0 or (i, j, node_id, t)
+    std::tuple<int, int, std::vector<size_t>, size_t> is_conflict(HighLevelNodePtr node); // 0 or (i, j, node_id, t)
 };

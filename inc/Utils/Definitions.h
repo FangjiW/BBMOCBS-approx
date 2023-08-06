@@ -296,7 +296,7 @@ public:
     HighLevelNode(size_t agent_num) : indiv_paths_list(std::vector<PathSet>(agent_num)), 
             indiv_apex_costs(std::vector<CostSet>(agent_num)), indiv_real_costs(std::vector<CostSet>(agent_num)),
             rep_id_list(std::vector<size_t>(agent_num)), constraints(ConstraintSet(agent_num)){};
-    HighLevelNode(const HighLevelNode& node);
+    // HighLevelNode(const HighLevelNode& node);
 };
 
 #endif //UTILS_DEFINITIONS_H

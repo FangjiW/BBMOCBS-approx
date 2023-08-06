@@ -332,43 +332,18 @@ std::ostream& operator<<(std::ostream& os, const Interval& interval){
 
 
 /************************N E W**************************/
-// JointPath::JointPath(std::vector<ApexPathPairPtr> solution_list)
-// {
-//     ap_list = solution_list;
-//     this->apex_cost = std::vector<size_t>(solution_list.front()->apex->g.size(), 0);
-//     this->cost = std::vector<size_t>(solution_list.front()->path_node->g.size(), 0);
-//     for(auto solution : solution_list){
-//         for(size_t i = 0; i < solution->apex->g.size(); i ++){
-//             this->apex_cost.at(i) += solution->apex->g.at(i);
-//             this->cost.at(i) += solution->path_node->g.at(i);
-//         }
-//     }
-// }
 
-// JointPath::JointPath(JointPathPtr joint_path, ApexPathPairPtr ap)
+// HighLevelNode::HighLevelNode(const HighLevelNode& node)
 // {
-//     for(auto _ap : joint_path->ap_list){
-//         ap_list.push_back(_ap);
-//     }
-//     ap_list.push_back(ap);
-//     this->apex_cost = joint_path->apex_cost;
-//     this->cost = joint_path->cost;
-//     for(size_t i = 0; i < ap->apex->g.size(); i ++){
-//         this->apex_cost.at(i) += ap->apex->g.at(i); 
-//         this->cost.at(i) += ap->path_node->g.at(i);
-//     }
+//     int agent_num = node.indiv_paths_list.size();
+//     indiv_paths_list = std::vector<PathSet>(agent_num);
+//     indiv_apex_costs = std::vector<CostSet>(agent_num);
+//     indiv_real_costs = std::vector<CostSet>(agent_num);
+//     rep_id_list = node.rep_id_list;
+//     rep_apex_cost = node.rep_apex_cost;
+//     constraints = node.constraints;
+//     joint_path_list = node.joint_path_list;
 // }
-
-HighLevelNode::HighLevelNode(const HighLevelNode& node)
-{
-    indiv_paths_list = node.indiv_paths_list;
-    indiv_apex_costs = node.indiv_apex_costs;
-    indiv_real_costs = node.indiv_real_costs;
-    rep_id_list = node.rep_id_list;
-    rep_apex_cost = node.rep_apex_cost;
-    constraints = node.constraints;
-    joint_path_list = node.joint_path_list;
-}
 
 bool HighLevelNode::more_than_full_cost::operator()(HighLevelNodePtr& a, HighLevelNodePtr& b)
 {
