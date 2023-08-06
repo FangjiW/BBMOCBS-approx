@@ -3,6 +3,4 @@
 剩余：
 
 1. d > 2 情况还差NonDomVec
-2. 没加waiting cost
-3. conflict check 差边的检测
-4. SIPP
+2. SIPP

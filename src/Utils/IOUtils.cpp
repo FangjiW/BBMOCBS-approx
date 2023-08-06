@@ -287,11 +287,12 @@ void PreProcessor::read_config(std::string config_file, Map map, int agent_num, 
 //     }
 // }
 
-void PreProcessor::generate_cost(Map map, std::vector<Edge>& edges)
+void PreProcessor::generate_cost(Map map, std::vector<Edge>& edges, int dim)
 {
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     Map cost_map1(map.width, map.height);
     Map cost_map2(map.width, map.height);
+    Map cost_map3(map.width, map.height);
 
     std::default_random_engine generator(seed);
     std::uniform_int_distribution<int> distribution(1, 2);
@@ -301,8 +302,10 @@ void PreProcessor::generate_cost(Map map, std::vector<Edge>& edges)
         for(int y = 0; y < map.width; y ++){
             int randomNumber1 = distribution(generator);
             int randomNumber2 = distribution(generator);
+            int randomNumber3 = distribution(generator);
             cost_map1.setVal(x, y, randomNumber1);
             cost_map2.setVal(x, y, randomNumber2);
+            cost_map3.setVal(x, y, randomNumber3);
         }
     }
 
@@ -311,24 +314,28 @@ void PreProcessor::generate_cost(Map map, std::vector<Edge>& edges)
             if(map.getVal(x, y) == -1){
                 continue;
             }
-            edges.push_back(Edge(map.getID(x, y), map.getID(x, y), std::vector<size_t>(
-                    {cost_map1.getVal(x, y), cost_map2.getVal(x, y)})));        //  add remain place action
+            std::vector<size_t> cost_vec;
+            if(dim == 2){
+                cost_vec = std::vector<size_t>({cost_map1.getVal(x, y), cost_map2.getVal(x, y)});
+            }else if(dim == 3){
+                cost_vec = std::vector<size_t>({cost_map1.getVal(x, y), cost_map2.getVal(x, y), cost_map3.getVal(x, y)});
+            }else{
+                std::cout << "generate_cost Error: invalid g dimension." << std::endl;
+                exit(1);
+            }
+            edges.push_back(Edge(map.getID(x, y), map.getID(x, y), std::vector<size_t>(cost_vec)));        //  add remain place action
 
             if(y < map.width-1 && map.getVal(x, y+1) == 0){
-                edges.push_back(Edge(map.getID(x, y+1), map.getID(x, y), std::vector<size_t>(
-                    {cost_map1.getVal(x, y), cost_map2.getVal(x, y)})));
+                edges.push_back(Edge(map.getID(x, y+1), map.getID(x, y), std::vector<size_t>(cost_vec))); 
             }
             if(y > 0 && map.getVal(x, y-1) == 0){
-                edges.push_back(Edge(map.getID(x, y-1), map.getID(x, y), std::vector<size_t>(
-                    {cost_map1.getVal(x, y), cost_map2.getVal(x, y)})));
+                edges.push_back(Edge(map.getID(x, y-1), map.getID(x, y), std::vector<size_t>(cost_vec))); 
             }
             if(x < map.height-1 && map.getVal(x+1, y) == 0){
-                edges.push_back(Edge(map.getID(x+1, y), map.getID(x, y), std::vector<size_t>(
-                    {cost_map1.getVal(x, y), cost_map2.getVal(x, y)})));
+                edges.push_back(Edge(map.getID(x+1, y), map.getID(x, y), std::vector<size_t>(cost_vec))); 
             }
             if(x > 0 && map.getVal(x-1, y) == 0){
-                edges.push_back(Edge(map.getID(x-1, y), map.getID(x, y), std::vector<size_t>(
-                    {cost_map1.getVal(x, y), cost_map2.getVal(x, y)})));
+                edges.push_back(Edge(map.getID(x-1, y), map.getID(x, y), std::vector<size_t>(cost_vec))); 
             }
         }
     }

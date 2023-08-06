@@ -46,6 +46,7 @@ void LocalCheckLinear::add_node(ApexPathPairPtr ap){
     auto id = ap->id;
     if(!min_g2[id].count(ap->t)){
         min_g2[ap->id][ap->t].push_front(ap);
+        return;
     }
     for (auto it = min_g2[id][ap->t].begin(); it != min_g2[id][ap->t].end(); ){
         // TODO remove it for performance

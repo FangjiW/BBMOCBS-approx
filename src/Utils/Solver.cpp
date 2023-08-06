@@ -2,9 +2,35 @@
 #include <cstdlib>
 #include <list>
 #include <algorithm>
+#include <set>
 
-bool more_than(JointPathTuple a, JointPathTuple b);
-bool more_than_(JointPathPair a, JointPathPair b);
+template <typename T>
+bool more_than(const T &a, const T &b, bool lexico=true)
+{
+    if(lexico == true){  // lexicographic
+        auto vec1 = std::get<0>(a), vec2 = std::get<0>(b);
+        for(int i = 0; i < vec1.size(); i ++){
+            if(vec1.at(i) != vec2.at(i)){
+                return vec1.at(i) < vec2.at(i);
+            }
+        }
+        return true;
+    }else{  // only compare the first component
+        return std::get<0>(a).at(0) <= std::get<0>(b).at(0);
+    }
+}
+
+struct More_Than_
+{
+    bool operator()(const CostVector &a, const CostVector &b){
+        for(int i = 0; i < a.size(); i++){
+            if(a.at(i) != b.at(i)){
+                return a.at(i) < b.at(i);
+            }
+        }
+        return true;
+    }
+} more_than_;
 
 void Solver::add_constraint(ConstraintSet& constraints, size_t agent_id, size_t node_id, size_t time)
 {
@@ -67,11 +93,11 @@ void Solver::NonDomJointPath(HighLevelNodePtr node, MergeStrategy ms, double eps
                 // std::push_heap(_joint_path_vector.begin(), _joint_path_vector.end(), more_than);
             }
         }
-        joint_path_vector.sort(more_than);
+        joint_path_vector.sort([](const JointPathTuple& a, JointPathTuple& b){
+            return more_than<JointPathTuple>(a, b);});
         // std::cout << "im here";
         // std::cout << std::get<0>(joint_path_vector.front()).size();
         
-        // getchar();
         NonDomVec(joint_path_vector, ms, eps);
     }
 
@@ -108,7 +134,8 @@ void Solver::NonDomJointPath(HighLevelNodePtr node, double eps)
                 // std::push_heap(_joint_path_vector.begin(), _joint_path_vector.end(), more_than_);
             }
         }
-        joint_path_list.sort(more_than_);
+        joint_path_list.sort([](const JointPathPair& a, JointPathPair& b){
+            return more_than<JointPathPair>(a, b);});
         NonDomVec(joint_path_list, eps);
     }
     // auto t2 = std::chrono::high_resolution_clock::now(); // for timing.
@@ -145,10 +172,52 @@ void Solver::NonDomVec(std::list<JointPathTuple>& joint_path_vector, MergeStrate
                 iter = joint_path_vector.erase(iter);
             }
         }
-    } else {
-        std::cout << std::endl << "Only g size = 2" << std::endl;
-        exit(1);
+    }else if(std::get<0>(joint_path_vector.front()).size() == 3){
+	// dominance check
+		std::set<CostVector, More_Than_>  domination_set;
+		for(auto iter = joint_path_vector.begin(); iter != joint_path_vector.end(); ){
+            //  dominance check
+			std::vector<size_t>  trun_vec({std::get<0>(*iter).at(1), std::get<0>(*iter).at(2)});
+            if(domination_set.empty()){
+                domination_set.insert(trun_vec);
+                iter ++;
+                continue;
+            }
+
+			auto it = domination_set.upper_bound(trun_vec);
+            
+            if(it != domination_set.begin() && (*std::prev(it)).at(1) <= trun_vec.at(1)){
+                iter = joint_path_vector.erase(iter);
+            }else{
+                domination_set.insert(trun_vec);
+            //  delete the behind dominated ones (this operation can be removed)
+                for(auto iter_ = it; iter_ != domination_set.end(); ){
+                    if(trun_vec.at(1) <= (*iter_).at(1)){
+                        iter_ = domination_set.erase(iter_);
+                    }else{
+                        break;
+                    }
+                }
+
+            //  merge
+                bool is_merge = false;
+                for (auto iter1 = joint_path_vector.begin(); iter1 != iter; iter1++) {
+                    // comment: even if merging, the RB-tree don't need changing
+                    if(HighLevelMerge(*iter1, *iter, ms, eps)){  
+                        iter = joint_path_vector.erase(iter);
+                        is_merge = true;
+                        break;
+                    }
+                }
+                if (!is_merge) {
+                    iter ++;
+                }
+            }
+		}
+	}else{
+        std::cout << std::endl << "(A*pex) ERROR: only g size = 2 or 3" << std::endl;
     }
+
     // std::cout << "bbb";
     // getchar();
 }
@@ -255,7 +324,6 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
     // for(auto i : root_node->rep_id_list){
     //     std::cout << i << " ";
     // }
-    // getchar();
     open_list.insert(root_node);
 
 //  main loop    
@@ -263,13 +331,6 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
     while(!open_list.empty())
     {
         auto node = open_list.pop();
-        // std::cout << node->indiv_paths_list.at(0)[0].at(0) << node->indiv_paths_list.at(0)[0].at(1) << std::endl;
-        // std::cout << node->indiv_paths_list.at(1)[0].at(0) << node->indiv_paths_list.at(1)[0].at(1) << std::endl;
-        
-        // getchar();
-        // std::cout << hsolution_costs.size();
-        // std::cout << open_list.size() << std::endl;
-        // getchar();
         bool is_filtered = DomPrune(hsolution_costs, node->joint_path_list, eps);
         if(node->joint_path_list.empty()){
             continue;
@@ -281,14 +342,7 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
             continue;
         }
         auto cft = conflict_checker.is_conflict(node);
-        // if(cft.empty()){
-        //     std::cout << "NO CONFLICTION!" << std::endl;
-        // }
-        // getchar();
-        // else{
-        //     std::cout << cft[0] <<"    " << cft[1] << "    " << cft[2] << "    " << cft[3] << std::endl;
-        //     getchar();
-        // }
+
         if(std::get<2>(cft).empty()){
             std::vector<std::vector<size_t>> new_hsolution;
             CostVector  new_cost(node->rep_apex_cost.size(), 0);
@@ -428,27 +482,6 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
     return constraint_num;
 }
 
-
-bool more_than(JointPathTuple a, JointPathTuple b)
-{
-    for(int i = 0; i < std::get<0>(a).size(); i ++){
-        if(std::get<0>(a).at(i) != std::get<0>(b).at(i)){
-            return std::get<0>(a).at(i) <= std::get<0>(b).at(i);
-        }
-    }
-    return false;
-}
-
-
-bool more_than_(JointPathPair a, JointPathPair b)
-{
-    for(int i = 0; i < a.first.size(); i ++){
-        if(a.first.at(i) != b.first.at(i)){
-            return a.first.at(i) <= b.first.at(i);
-        }
-    }
-    return false;
-}
 
 
 

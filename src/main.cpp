@@ -29,6 +29,7 @@ int main(int argc, char** argv)
         ("map,m", po::value<std::string>()->required(), "Map File")
         ("cost,c", po::value<std::string>()->default_value(""), "Cost File")
         ("config", po::value<std::string>()->required(), "Configure File")
+        ("dim,d", po::value<int>()->default_value(2), "dimension of cost function")
         ("eps,e", po::value<double>()->default_value(0), "approximation factor")
         ("agent_num,n", po::value<int>()->default_value(-1), "number of agents")
         ("merge", po::value<std::string>()->default_value(""), "strategy for merging apex node pair: SMALLER_G2, RANDOM or MORE_SLACK")
@@ -62,6 +63,9 @@ int main(int argc, char** argv)
 
     // Build graphs
     MergeStrategy ms = DEFAULT_MERGE_STRATEGY;
+    if(vm["dim"].as<int>() == 3){
+        ms = MergeStrategy::RANDOM;
+    }
     // alg_variant = vm["merge"].as<std::string>();
 
     // if (vm["merge"].as<std::string>() != "" && vm["algorithm"].as<std::string>()!= "Apex"){
@@ -89,7 +93,7 @@ int main(int argc, char** argv)
     p.read_map(vm["map"].as<std::string>(), map, id2coord);
     p.read_config(vm["config"].as<std::string>(), map, vm["agent_num"].as<int>(), start_end);
     // p.read_cost(vm["cost"].as<std::string>(), map, edges);
-    p.generate_cost(map, edges);
+    p.generate_cost(map, edges, vm["dim"].as<int>());
     map.ddelete();
 
 
@@ -110,7 +114,13 @@ int main(int argc, char** argv)
     std::cout << endl << endl;
     for(size_t num = 0; num < hsolutions.size(); num ++){
         std::cout << "SOLUTION   " << num+1 << endl;
-        std::cout << "COST   " << "{ " << hsolution_costs.at(num).at(0) << ", " << hsolution_costs.at(num).at(1) << " }" << endl;
+        std::cout << "COST   " << "{";
+        if(vm["dim"].as<int>() == 2){
+            std::cout << hsolution_costs.at(num).at(0) << ", " << hsolution_costs.at(num).at(1);
+        }else{
+            std::cout << hsolution_costs.at(num).at(0) << ", " << hsolution_costs.at(num).at(1) << ", " << hsolution_costs.at(num).at(2);
+        }
+        std::cout << "}" << endl;
         for(size_t i = 0; i < hsolutions.at(num).size(); i++){
             std::cout << "agent " << i+1 << ":" << std::endl;
             for(size_t id : hsolutions.at(num).at(i)){
