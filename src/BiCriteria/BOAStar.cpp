@@ -55,7 +55,7 @@ void BOAStar::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, Co
         if(node->id == target){
             // std::cout << "node->f[1] = " << node->f[1] << std::endl;
             // getchar();
-            if((1+this->eps[1])*node->f[1] >= min_g2_target){
+            if((1+this->eps_prune[1])*node->f[1] >= min_g2_target){
                 continue;
             }else{
                 min_g2_target = node->g[1];
@@ -63,7 +63,7 @@ void BOAStar::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, Co
                 // getchar();
             }
         }else{
-            if ((((1+this->eps[1])*node->f[1]) >= min_g2_target) || 
+            if ((((1+this->eps_prune[1])*node->f[1]) >= min_g2_target) || 
             min_g2[node->id].count(node->t) && (node->g[1] >= min_g2[node->id][node->t])) {
                 closed.push_back(node);
                 continue;
@@ -76,8 +76,6 @@ void BOAStar::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, Co
 
 
         if (node->id == target) {
-            // std::cout << node->g[0] << ", " << node->g[1] << std::endl;
-            // getchar();
             solutions.push_back(node);
             log_solution(node);
             continue;
@@ -96,11 +94,11 @@ void BOAStar::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, Co
                 // std::cout << next_g[1]+next_h[1] << std::endl;
                 // std::cout << next_t;
                 // getchar();
-                if ((1+this->eps[1])*(next_g[1]+next_h[1]) >= min_g2_target){
+                if ((1+this->eps_prune[1])*(next_g[1]+next_h[1]) >= min_g2_target){
                     continue;
                 }
             }else{
-                if ((((1+this->eps[1])*(next_g[1]+next_h[1])) >= min_g2_target) || 
+                if ((((1+this->eps_prune[1])*(next_g[1]+next_h[1])) >= min_g2_target) || 
                 min_g2[next_id].count(next_t) && (next_g[1] >= min_g2[next_id][next_t])) {
                     closed.push_back(node);
                     continue;

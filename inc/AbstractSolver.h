@@ -8,7 +8,8 @@ class AbstractSolver {
 protected:
     const AdjacencyMatrix   &adj_matrix;
     // Pair<double>            eps;
-    EPS eps;
+    EPS eps_prune;
+    EPS eps_merge;
 
     size_t num_expansion = 0;
     size_t num_generation= 0;
@@ -37,6 +38,7 @@ public:
     bool is_constraint(NodePtr node, IndividualConstraintSet& indiv_constraint_set);
 
     
-    AbstractSolver(const AdjacencyMatrix &adj_matrix, EPS eps, const LoggerPtr logger): adj_matrix(adj_matrix), eps(eps), logger(logger) {}
+    AbstractSolver(const AdjacencyMatrix &adj_matrix, EPS eps_prune, const LoggerPtr logger): adj_matrix(adj_matrix), eps_prune(eps_prune), logger(logger) {}
+    AbstractSolver(const AdjacencyMatrix &adj_matrix, EPS eps_merge, EPS eps_prune, const LoggerPtr logger): adj_matrix(adj_matrix), eps_merge(eps_merge), eps_prune(eps_prune), logger(logger) {}
     virtual ~AbstractSolver(){}
 };

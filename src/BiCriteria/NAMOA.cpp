@@ -74,13 +74,13 @@ void NAMOAdr::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, Co
         node = open.pop();
         num_generation +=1;
 
-        if (is_dominated_dr(node, closed_target, eps) ||
+        if (is_dominated_dr(node, closed_target, eps_prune) ||
             closed[node->id].count(node->t) && is_dominated_dr(node, closed[node->id][node->t])
             ){
             continue;
         }
         if(node->id == target){
-            if (is_dominated_dr(node, closed_target, eps)){
+            if (is_dominated_dr(node, closed_target, eps_prune)){
                 continue;
             }else{
                 add_node_dr(node, closed_target);
@@ -119,7 +119,7 @@ void NAMOAdr::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, Co
 
             // Dominance check
             if(next->id == target){
-                if (is_dominated_dr(next, closed_target, eps)){
+                if (is_dominated_dr(next, closed_target, eps_prune)){
                     continue;
                 }
             }else{

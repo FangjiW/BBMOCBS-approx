@@ -27,7 +27,10 @@ int main(int argc, char** argv)
         ("cost,c", po::value<std::string>()->default_value(""), "Cost File")
         ("config", po::value<std::string>()->required(), "Configure File")
         ("dim,d", po::value<int>()->default_value(2), "dimension of cost function")
-        ("eps,e", po::value<double>()->default_value(0), "approximation factor")
+        ("hem", po::value<double>()->default_value(0), "High Level merge approximate factor")
+        ("lem", po::value<double>()->default_value(0), "Low Level merge approximate factor")
+        ("hep", po::value<double>()->default_value(0), "High Level prune approximate factor")
+        ("lep", po::value<double>()->default_value(0), "Low Level prune approximate factor")
         ("agent_num,n", po::value<int>()->default_value(-1), "number of agents")
         ("merge", po::value<std::string>()->default_value(""), "strategy for merging apex node pair: SMALLER_G2, RANDOM or MORE_SLACK")
         ("algorithm,a", po::value<std::string>()->default_value("Apex"), "low-level solvers (BOA, PPA or Apex search)")
@@ -80,7 +83,7 @@ int main(int argc, char** argv)
     std::vector<CostVector>    hsolution_costs;
 
     auto start_time = std::chrono::high_resolution_clock::now();    // record time
-    size_t constraint_num = solver.search(map.graph_size, edges, vm, start_end, vm["agent_num"].as<int>(), vm["eps"].as<double>(), ms, logger, hsolutions, hsolution_costs);
+    size_t constraint_num = solver.search(map.graph_size, edges, vm, start_end, ms, logger, hsolutions, hsolution_costs);
     auto end_time = std::chrono::high_resolution_clock::now();
     
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
@@ -88,6 +91,7 @@ int main(int argc, char** argv)
 
 
 /********************  Print  Path  Info  ************************/
+getchar();
     std::cout << endl << endl;
     for(size_t num = 0; num < hsolutions.size(); num ++){
         std::cout << "SOLUTION   " << num+1 << endl;

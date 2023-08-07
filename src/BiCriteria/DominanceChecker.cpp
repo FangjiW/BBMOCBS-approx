@@ -5,8 +5,8 @@ bool SolutionCheck::is_dominated(ApexPathPairPtr node){
     if (last_solution == nullptr){
         return false;
     }
-    if (is_bounded(node->apex, last_solution->apex)){
-        // assert(last_solution->update_apex_by_merge_if_bounded(node->apex, eps));
+    if (is_bounded(node->apex, last_solution->path_node, eps)){ // 不一定只有last_solution能bound
+        assert(last_solution->update_apex_by_merge_if_bounded(node->apex, eps));
         // std::cout << "solution dom" << std::endl;
         return true;
     }
@@ -63,8 +63,8 @@ void LocalCheckLinear::add_node(ApexPathPairPtr ap){
 
 bool SolutionCheckLinear::is_dominated(ApexPathPairPtr node){
     for (auto ap: solutions){
-        if (is_bounded(node->apex, ap->apex)){
-        // if (ap->update_apex_by_merge_if_bounded(node->apex, eps)){
+        // if (is_bounded(node->apex, ap->apex)){
+        if (ap->update_apex_by_merge_if_bounded(node->apex, eps)){
             // assert(ap->update_apex_by_merge_if_bounded(node->apex, eps));
             return true;
         }

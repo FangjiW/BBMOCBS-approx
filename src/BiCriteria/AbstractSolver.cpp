@@ -19,7 +19,8 @@ void AbstractSolver::start_logging(size_t source, size_t target) {
     start_info_json
         << "{\n"
         <<      "\t\"name\": \"" << get_solver_name() << "\",\n"
-        <<      "\t\"eps\": " << this->eps << "\n"
+        <<      "\t\"eps_merge\": " << this->eps_merge << "\n"
+        <<      "\t\"eps_merge\": " << this->eps_prune << "\n"
         << "}";
 
     if (this->logger != nullptr) {

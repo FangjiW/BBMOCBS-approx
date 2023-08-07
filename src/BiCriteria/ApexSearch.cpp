@@ -7,8 +7,8 @@
 #include "ApexSearch.h"
 
 
-ApexSearch::ApexSearch(const AdjacencyMatrix &adj_matrix, EPS eps, const LoggerPtr logger) :
-    AbstractSolver(adj_matrix, eps, logger),
+ApexSearch::ApexSearch(const AdjacencyMatrix &adj_matrix, EPS eps_merge, EPS eps_prune, const LoggerPtr logger) :
+    AbstractSolver(adj_matrix, eps_merge, eps_prune, logger),
     num_of_objectives(adj_matrix.get_num_of_objectives())
 {
     expanded.resize(this->adj_matrix.size()+1);
@@ -21,7 +21,7 @@ void ApexSearch::insert(ApexPathPairPtr &ap, APQueue &queue) {
         if ((*existing_ap)->is_active == false) {
             continue;
         }
-        if (ap->update_nodes_by_merge_if_bounded(*existing_ap, this->eps, ms) == true) {
+        if (ap->update_nodes_by_merge_if_bounded(*existing_ap, this->eps_merge, ms) == true) {
             // pp and existing_pp were merged successfuly into pp
             // std::cout << "merge!" << std::endl;
             if ((ap-> apex!= (*existing_ap)->apex) ||
@@ -42,7 +42,7 @@ void ApexSearch::insert(ApexPathPairPtr &ap, APQueue &queue) {
 
 void ApexSearch::merge_to_solutions(const ApexPathPairPtr &ap, ApexPathSolutionSet &solutions) {
     for (auto existing_solution = solutions.begin(); existing_solution != solutions.end(); ++existing_solution) {
-        if ((*existing_solution)->update_nodes_by_merge_if_bounded(ap, this->eps, ms) == true) {
+        if ((*existing_solution)->update_nodes_by_merge_if_bounded(ap, this->eps_prune, ms) == true) {
             return;
         }
     }
@@ -71,11 +71,11 @@ void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs,
     auto start_time = std::clock();
 
     if (num_of_objectives == 2){
-        local_dom_checker = std::make_unique<LocalCheck>(eps, this->adj_matrix.size());
-        solution_dom_checker = std::make_unique<SolutionCheck>(eps);
+        local_dom_checker = std::make_unique<LocalCheck>(eps_merge, this->adj_matrix.size());
+        solution_dom_checker = std::make_unique<SolutionCheck>(eps_prune);
     }else{
-        local_dom_checker = std::make_unique<LocalCheckLinear>(eps, this->adj_matrix.size());
-        solution_dom_checker = std::make_unique<SolutionCheckLinear>(eps);
+        local_dom_checker = std::make_unique<LocalCheckLinear>(eps_merge, this->adj_matrix.size());
+        solution_dom_checker = std::make_unique<SolutionCheckLinear>(eps_prune);
     }
 
 
