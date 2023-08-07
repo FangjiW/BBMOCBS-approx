@@ -70,10 +70,10 @@ bool Solver::DomPrune(std::vector<CostVector> solution_costs, std::list<JointPat
 // A*pex version
 void Solver::NonDomJointPath(HighLevelNodePtr node, MergeStrategy ms, double eps)
 {
-    // for(auto e : node->indiv_paths_list){
-    //     std::cout << e.size() << " ";
-    // }
-    // auto _t1 = std::chrono::high_resolution_clock::now();
+    for(auto e : node->indiv_paths_list){
+        std::cout << e.size() << " ";
+    }
+    auto _t1 = std::chrono::high_resolution_clock::now();
     JointPathTuple temp;
     node->joint_path_list.clear();
     
@@ -105,10 +105,10 @@ void Solver::NonDomJointPath(HighLevelNodePtr node, MergeStrategy ms, double eps
     for(auto& element : joint_path_vector){
         node->joint_path_list.push_back(std::make_pair(std::get<0>(element), std::get<2>(element)));
     }
-    // auto t2 = std::chrono::high_resolution_clock::now(); // for timing.
-    // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - _t1);
-    // std::cout << " Non Dom time = " << ((double)duration.count()) / 1000000.0 << std::endl;
-    // std::cout << node->joint_path_list.size() << std::endl;
+    auto t2 = std::chrono::high_resolution_clock::now(); // for timing.
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - _t1);
+    std::cout << " Non Dom time = " << ((double)duration.count()) / 1000000.0 << std::endl;
+    std::cout << node->joint_path_list.size() << std::endl;
     // getchar();
 }
 
