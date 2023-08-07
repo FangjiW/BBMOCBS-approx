@@ -1,6 +1,5 @@
-./bin/multiobj -o output.txt -m ../dataset/random-32-32-10/random-32-32-10.map --config ../dataset/random-32-32-10/random-32-32-10-random-1.scen -c ../dataset/random-32-32-10/random-32-32-10.cost -a Apex -n 20 -e 0.1
+./bin/multiobj -o output.txt -m ../dataset/random-32-32-10/random-32-32-10.map --config ../dataset/random-32-32-10/random-32-32-10-random-1.scen -c ../dataset/random-32-32-10/random-32-32-10.cost -d 2 -a Apex -n 20 -e 0.1
 
 剩余：
 
-1. d > 2 情况还差NonDomVec
-2. SIPP
+1. SIPP

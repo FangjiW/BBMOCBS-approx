@@ -19,9 +19,6 @@ using namespace std;
 int main(int argc, char** argv)
 {
     namespace po = boost::program_options;
-    
-    // std::vector<string> objective_files;
-
     // Declare the supported options.
     po::options_description desc("Allowed options");
     desc.add_options()
@@ -39,52 +36,32 @@ int main(int argc, char** argv)
         ("output,o", po::value<std::string>()->required(), "Name of the output file")
         ("logging_file", po::value<std::string>()->default_value(""), "logging file" )
         ;
-
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::notify(vm);
     
     if (vm.count("help")) {
         std::cout << desc << std::endl;
         return 1;
     }
 
-    po::notify(vm);
-
-
     LoggerPtr logger = nullptr;
-
     if (vm["logging_file"].as<std::string>() != ""){
         logger = new Logger(vm["logging_file"].as<std::string>());
     }
 
-    /***************************    End Gragh Info  *****************************/
-
-    // std::cout << "Graph Size: " << graph_size << std::endl;
-
-    // Build graphs
+/********************  Check  Input  Format  *********************/
+    if(vm["algorithm"].as<std::string>() == "BOA" && vm["dim"].as<int>() > 2){
+        std::cout << std::endl << "BOA* only works for cost dimension = 2";
+        exit(1);
+    }
     MergeStrategy ms = DEFAULT_MERGE_STRATEGY;
     if(vm["dim"].as<int>() == 3){
         ms = MergeStrategy::RANDOM;
     }
-    // alg_variant = vm["merge"].as<std::string>();
 
-    // if (vm["merge"].as<std::string>() != "" && vm["algorithm"].as<std::string>()!= "Apex"){
-    //     alg_variant = "";
-    //     std::cout << "WARNING: merge strategy with non-apex search" << std::endl;
-    // }else if(vm["merge"].as<std::string>() == "SMALLER_G2"){
-    //     ms = MergeStrategy::SMALLER_G2;
-    // }else if(vm["merge"].as<std::string>() == "SMALLER_G2_FIRST"){
-    //     ms = MergeStrategy::SMALLER_G2_FIRST;
-    // }else if(vm["merge"].as<std::string>() == "RANDOM"){
-    //     ms = MergeStrategy::RANDOM;
-    // }else if(vm["merge"].as<std::string>() == "MORE_SLACK"){
-    //     ms = MergeStrategy::MORE_SLACK;
-    // }else if(vm["merge"].as<std::string>() == "REVERSE_LEX"){
-    //     ms = MergeStrategy::REVERSE_LEX;
-    // }else{
-    //     std::cerr << "unknown merge strategy" << std::endl;
-    // }
 
+/*************************  Build  Map  ****************************/
     Map map;
     PreProcessor p;
     std::unordered_map<size_t, std::vector<int>> id2coord;
@@ -97,8 +74,7 @@ int main(int argc, char** argv)
     map.ddelete();
 
 
-/**************************N E W*******************************/
-//  search
+/**************************  Search  *****************************/
     Solver      solver;
     HSolutionID        hsolutions;
     std::vector<CostVector>    hsolution_costs;
@@ -110,7 +86,8 @@ int main(int argc, char** argv)
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
     delete(logger);
 
-/*********************  Print    Path    Info*********************/
+
+/********************  Print  Path  Info  ************************/
     std::cout << endl << endl;
     for(size_t num = 0; num < hsolutions.size(); num ++){
         std::cout << "SOLUTION   " << num+1 << endl;
