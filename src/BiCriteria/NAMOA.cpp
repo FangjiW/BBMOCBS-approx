@@ -38,7 +38,7 @@ bool is_dominated_dr(NodePtr node, std::list<NodePtr>& list){
 // }
 
 void NAMOAdr::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, CostSet& solution_real_costs, 
-        size_t source, size_t target, Heuristic &heuristic, IndividualConstraintSet& indiv_constraint_set, 
+        size_t source, size_t target, Heuristic &heuristic, VertexConstraint& vertex_constraints, EdgeConstraint& edge_constraints,
         unsigned int time_limit) {
     this->start_logging(source, target);
     auto start_time = std::clock();
@@ -113,7 +113,7 @@ void NAMOAdr::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, Co
             next = std::make_shared<Node>(next_id, next_g, next_h, node->t+1, node);
 
             // confliction check
-            if(is_constraint(next, indiv_constraint_set)){
+            if(is_constraint(next, vertex_constraints, edge_constraints)){
                 continue;
             }
 

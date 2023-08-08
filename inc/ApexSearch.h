@@ -27,7 +27,7 @@ public:
     void set_merge_strategy(MergeStrategy new_ms){ms = new_ms;}
     ApexSearch(const AdjacencyMatrix &adj_matrix, EPS eps_merge, EPS eps_prune, const LoggerPtr logger=nullptr);
     virtual void operator()(PathSet& solution_ids, CostSet& solution_apex_costs, CostSet& solution_real_costs, 
-        size_t source, size_t target, Heuristic &heuristic, IndividualConstraintSet& indiv_constraint_set, 
+        size_t source, size_t target, Heuristic &heuristic, VertexConstraint& vertex_constraints, EdgeConstraint& edge_constraints,
         unsigned int time_limit); 
 };
 

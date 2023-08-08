@@ -55,14 +55,23 @@ void AbstractSolver::end_logging(SolutionSet &solutions, bool succ) {
     }
 }
 
-bool AbstractSolver::is_constraint(NodePtr node, IndividualConstraintSet& indiv_constraint_set)
+bool AbstractSolver::is_constraint(NodePtr node, VertexConstraint& vertex_constraints, EdgeConstraint& edge_constraints)
 {
-    if(indiv_constraint_set.empty()){
-        return false;
+    if(vertex_constraints.count(node->t)){
+        for(int i = 0; i < vertex_constraints[node->t].size(); i ++){
+            if(node->id == vertex_constraints[node->t][i]){
+                return true;
+            }
+        }
     }
-    for(auto i = 0; i < indiv_constraint_set[node->t].size(); i ++){
-        if(node->id == indiv_constraint_set[node->t][i]){
-            return true;
+    assert(node->parent != nullptr);
+    if(edge_constraints.count(node->parent->id)){
+        if(edge_constraints[node->parent->id].count(node->parent->t)){
+            for(int i = 0; i < edge_constraints[node->parent->id][node->parent->t].size(); i++){
+                if(node->id == edge_constraints[node->parent->id][node->parent->t].at(i)){
+                    return true;
+                }
+            }
         }
     }
     return false;

@@ -72,8 +72,8 @@ int main(int argc, char** argv)
     std::vector<Edge>  edges;
     p.read_map(vm["map"].as<std::string>(), map, id2coord);
     p.read_config(vm["config"].as<std::string>(), map, vm["agent_num"].as<int>(), start_end);
-    // p.read_cost(vm["cost"].as<std::string>(), map, edges);
-    p.generate_cost(map, edges, vm["dim"].as<int>());
+    p.read_cost(vm["cost"].as<std::string>(), map, edges);
+    // p.generate_cost(map, edges, vm["dim"].as<int>());
     map.ddelete();
 
 

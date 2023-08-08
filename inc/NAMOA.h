@@ -16,7 +16,7 @@ public:
     virtual std::string get_solver_name() {return "NAMOAdr"; }
 
     void operator()(PathSet& solution_ids, CostSet& solution_apex_costs, CostSet& solution_real_costs, 
-        size_t source, size_t target, Heuristic &heuristic, IndividualConstraintSet& indiv_constraint_set, 
+        size_t source, size_t target, Heuristic &heuristic, VertexConstraint& vertex_constraints, EdgeConstraint& edge_constraints,
         unsigned int time_limit);
 
 };

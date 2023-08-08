@@ -63,7 +63,7 @@ bool ApexSearch::is_dominated(ApexPathPairPtr ap, size_t target){
 
 
 void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, CostSet& solution_real_costs, 
-        size_t source, size_t target, Heuristic &heuristic, IndividualConstraintSet& indiv_constraint_set, 
+        size_t source, size_t target, Heuristic &heuristic, VertexConstraint& vertex_constraints, EdgeConstraint& edge_constraints,
         unsigned int time_limit) 
 {
     init_search();
@@ -143,7 +143,7 @@ void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs,
             next_ap = std::make_shared<ApexPathPair>(ap, *p_edge);
             
             // Constraint check
-            if(is_constraint(next_ap->path_node, indiv_constraint_set)){
+            if(is_constraint(next_ap->path_node, vertex_constraints, edge_constraints)){
                 continue;
             }
 

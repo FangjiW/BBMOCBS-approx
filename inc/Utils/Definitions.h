@@ -225,15 +225,11 @@ typedef boost::heap::priority_queue<NodePtr , boost::heap::compare<Node::compare
 
 
 /*******************N E W*******************/
-// struct IndividualPath;
-// struct JointPath;
 class HighLevelNode;
-// using JointPathPtr = std::shared_ptr<JointPath>;
 using HighLevelNodePtr = std::shared_ptr<HighLevelNode>;
 using HSolutionID = std::vector<std::vector<std::vector<size_t>>>;
-// using HighLevelSolutionCost = std::vector<std::vector<size_t>>;
-using IndividualConstraintSet = std::unordered_map<size_t, std::vector<size_t>>;
-using ConstraintSet = std::vector<IndividualConstraintSet>;
+using VertexConstraint = std::unordered_map<size_t, std::vector<size_t>>;   // (t, node)
+using EdgeConstraint = std::unordered_map<size_t, std::unordered_map<size_t, std::vector<size_t>>>; // (source, <t, target>);
 using CostVector = std::vector<size_t>;
 using PathSet = std::unordered_map<size_t, std::vector<size_t>>;
 using CostSet = std::unordered_map<size_t, std::vector<size_t>>;
@@ -282,7 +278,9 @@ public:
     std::vector<CostSet>                indiv_real_costs;
     std::vector<size_t>                 rep_id_list;
     CostVector                          rep_apex_cost;
-    ConstraintSet                       constraints;
+    std::vector<VertexConstraint>       vertex_constraints;
+    std::vector<EdgeConstraint>         edge_constraints;
+    
     std::list<JointPathPair>            joint_path_list;
     // std::vector<JointPathPtr>           all_joint_path;
     // JointPathPtr                        rep_path;   // representative path id in Pareto-optimal set
@@ -295,7 +293,8 @@ public:
 //  constructor
     HighLevelNode(size_t agent_num) : indiv_paths_list(std::vector<PathSet>(agent_num)), 
             indiv_apex_costs(std::vector<CostSet>(agent_num)), indiv_real_costs(std::vector<CostSet>(agent_num)),
-            rep_id_list(std::vector<size_t>(agent_num)), constraints(ConstraintSet(agent_num)){};
+            rep_id_list(std::vector<size_t>(agent_num)), vertex_constraints(std::vector<VertexConstraint>(agent_num)),
+            edge_constraints(std::vector<EdgeConstraint>(agent_num)){};
     // HighLevelNode(const HighLevelNode& node);
 };
 

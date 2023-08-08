@@ -32,10 +32,10 @@ public:
     size_t get_num_generation(){return num_generation;}
 
     virtual void operator()(PathSet& solution_ids, CostSet& solution_apex_costs, CostSet& solution_real_costs, 
-        size_t source, size_t target, Heuristic &heuristic, IndividualConstraintSet& indiv_constraint_set, 
-        unsigned int time_limit) = 0;
+        size_t source, size_t target, Heuristic &heuristic, VertexConstraint& vertex_constraints, 
+        EdgeConstraint& edge_constrains, unsigned int time_limit) = 0;
         
-    bool is_constraint(NodePtr node, IndividualConstraintSet& indiv_constraint_set);
+    bool is_constraint(NodePtr node, VertexConstraint& vertex_constraints, EdgeConstraint& edge_constraints);
 
     
     AbstractSolver(const AdjacencyMatrix &adj_matrix, EPS eps_prune, const LoggerPtr logger): adj_matrix(adj_matrix), eps_prune(eps_prune), logger(logger) {}

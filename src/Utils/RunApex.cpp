@@ -14,7 +14,8 @@ std::string alg_variant = "";
 void single_run_map(size_t graph_size, AdjacencyMatrix& graph, AdjacencyMatrix&inv_graph, size_t source, 
     size_t target, std::ofstream& output, std::string algorithm, MergeStrategy ms, LoggerPtr logger, 
     double Leps_merge, double Leps_prune, unsigned int time_limit, PathSet& solution_ids, 
-    CostSet& solution_apex_costs, CostSet& solution_real_costs, IndividualConstraintSet& indiv_constraint_set) {
+    CostSet& solution_apex_costs, CostSet& solution_real_costs, VertexConstraint& vertex_constraints, 
+    EdgeConstraint& edge_constraints) {
     // Compute heuristic
     // std::cout << "Start Computing Heuristic" << std::endl;
     ShortestPathHeuristic sp_heuristic(target, graph_size, inv_graph);  // can run outside and only once
@@ -50,7 +51,7 @@ void single_run_map(size_t graph_size, AdjacencyMatrix& graph, AdjacencyMatrix&i
 
     // auto start =std::clock();
     (*solver)(solution_ids, solution_apex_costs, solution_real_costs, source, target, heuristic, 
-            indiv_constraint_set, time_limit);
+            vertex_constraints, edge_constraints, time_limit);
     // runtime = std::clock() - start;
 
     // std::cout << "LowLevel" << "  Runtime: " <<  ((double) runtime) / CLOCKS_PER_SEC<< std::endl;
@@ -82,17 +83,17 @@ void single_run_map(size_t graph_size, AdjacencyMatrix& graph, AdjacencyMatrix&i
 void single_run_map(size_t graph_size, std::vector<Edge> & edges, size_t source, size_t target, 
     std::string output_file, std::string algorithm, MergeStrategy ms, LoggerPtr logger, 
     double Leps_merge, double Leps_prune, int time_limit, PathSet& solution_ids, CostSet& solution_apex_costs, 
-    CostSet& solution_real_costs, IndividualConstraintSet& indiv_constraint_set) {
+    CostSet& solution_real_costs, VertexConstraint& vertex_constraints, EdgeConstraint& edge_constraints) {
     
     AdjacencyMatrix graph(graph_size, edges);   // can run outside and only once
     AdjacencyMatrix inv_graph(graph_size, edges, true);
     std::ofstream stats;
     stats.open(output_path + output_file, std::fstream::app);
 
-    single_run_map(graph_size, graph, inv_graph, source, target, stats, algorithm, ms, logger, Leps_merge, Leps_prune, time_limit, solution_ids, solution_apex_costs, solution_real_costs, indiv_constraint_set);
+    single_run_map(graph_size, graph, inv_graph, source, target, stats, algorithm, ms, logger, Leps_merge, Leps_prune, time_limit, solution_ids, solution_apex_costs, solution_real_costs, vertex_constraints, edge_constraints);
  }
 
-void run_query(size_t graph_size, std::vector<Edge> & edges, std::string query_file, std::string output_file, std::string algorithm, MergeStrategy ms, LoggerPtr logger, double eps, int time_limit, IndividualConstraintSet& indiv_constraint_set) {
+void run_query(size_t graph_size, std::vector<Edge> & edges, std::string query_file, std::string output_file, std::string algorithm, MergeStrategy ms, LoggerPtr logger, double eps, int time_limit, VertexConstraint& vertex_constraints) {
     // std::ofstream stats;
     // stats.open(output_path + output_file, std::fstream::app);
 
@@ -115,7 +116,7 @@ void run_query(size_t graph_size, std::vector<Edge> & edges, std::string query_f
     //     size_t source = iter->first;
     //     size_t target = iter->second;
 
-    //     single_run_map(graph_size, graph, inv_graph, source, target, stats, algorithm, ms, logger, eps, time_limit, indiv_constraint_set);
+    //     single_run_map(graph_size, graph, inv_graph, source, target, stats, algorithm, ms, logger, eps, time_limit, vertex_constraints);
     // }
 
 }
