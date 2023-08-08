@@ -370,13 +370,15 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
         HSolutionID& hsolution_ids, std::vector<CostVector>& hsolution_costs)
 {
     int agent_num = vm["agent_num"].as<int>();
-    double Heps_merge = vm["hem"].as<double>();
+    double Heps_merge_max = vm["hem"].as<double>();
     double Heps_prune = vm["hep"].as<double>();
     double Leps_merge = vm["lem"].as<double>();
     double Leps_prune = vm["lep"].as<double>();
     double time = vm["cutoffTime"].as<int>();
     std::string algorithm = vm["algorithm"].as<std::string>();
     std::string output = vm["output"].as<std::string>();
+    
+    double Heps_merge = Heps_merge_max;
 
     double NonDomTime = 0;
     double LowLevelTime = 0;
