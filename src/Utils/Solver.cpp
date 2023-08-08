@@ -43,22 +43,21 @@ void Solver::add_constraint(std::vector<EdgeConstraint>& edge_constraints, size_
     edge_constraints.at(agent_id)[source][time].push_back(target);
 }
 
-bool Solver::DomPrune(std::vector<CostVector>& solution_costs, std::list<JointPathPair>& joint_path_list, double eps)
+bool Solver::DomPrune(std::vector<CostVector>& solution_costs, std::list<JointPathPair>& joint_path_list, double eps, int& DomPruneNum)
 {
-    // std::cout << "joint_path_list size = " << joint_path_list.front().first.at(0) << ", " << joint_path_list.front().first.at(1) << std::endl;
-    // getchar();
     bool is_prune = false;
     for (auto iter = joint_path_list.begin(); iter != joint_path_list.end(); ) {
         bool is_dominated = false;
         for (auto& solution_cost : solution_costs) {
             bool is_dominated_by_this_one = true;
-            for (int i = 1; i < solution_cost.size(); i++) {
+            for (int i = 0; i < solution_cost.size(); i++) {
                 if (iter->first.at(i) * (1 + eps) < solution_cost.at(i)) {
                     is_dominated_by_this_one = false;
                     break;
                 }
             }
             if (is_dominated_by_this_one) {
+                DomPruneNum ++;
                 is_dominated = true;
                 iter = joint_path_list.erase(iter);
                 is_prune = true;
@@ -74,17 +73,19 @@ bool Solver::DomPrune(std::vector<CostVector>& solution_costs, std::list<JointPa
 
 bool Solver::DomPrune(std::vector<CostVector>& solution_costs, JointPathPair& joint_path, double eps)
 {
-    if(solution_costs.empty()){
-        return false;
-    }
     for (auto& solution_cost : solution_costs) {
-        for (int i = 1; i < solution_cost.size(); i++) {
+        bool is_dominated = true;
+        for (int i = 0; i < solution_cost.size(); i++) {
             if (joint_path.first.at(i) * (1 + eps) < solution_cost.at(i)) {
-                return false;
+                is_dominated = false;
+                break;
             }
         }
+        if(is_dominated){
+            return true;
+        }
     }
-    return true;
+    return false;
 }
 
 
@@ -411,7 +412,7 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
     double ConflictionTime = 0;
 
     int DomPruneNum = 0;
-    auto _t0 = std::chrono::high_resolution_clock::now();    // record time
+    auto t0 = std::chrono::high_resolution_clock::now();    // record time
     HLQueue open_list;
     int extra_solution = 0;
 
@@ -444,14 +445,11 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
 
         // Dom Prune
         auto _t3 = std::chrono::high_resolution_clock::now();
-        bool is_filtered = DomPrune(hsolution_costs, node->joint_path_list, Heps_prune);
+        bool is_filtered = DomPrune(hsolution_costs, node->joint_path_list, Heps_prune, DomPruneNum);
         auto t4 = std::chrono::high_resolution_clock::now(); // for timing.
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t4 - _t3);
         DomPruneTime += ((double)duration.count())/1000000.0;
 
-        if(is_filtered){
-            DomPruneNum ++;
-        }
         if(node->joint_path_list.empty()){
             continue;
         }
@@ -489,56 +487,54 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
             continue;
         }
 
-    //  print confliction information
-        if(std::get<2>(cft).size() == 2){
+    // //  print confliction information
+    //     if(std::get<2>(cft).size() == 2){
 
-        int _id1 = std::get<0>(cft);
-        int _id2 = std::get<1>(cft);
-        int id1 = _id1 >= 0 ? _id1 : -_id1-1;
-        int id2 = _id2 >= 0 ? _id2 : -_id2-1;
-        std::cout << std::endl << std::endl << "agent1: " << id1 << "  agent2: " << id2 << "  state: {" 
-            << std::get<2>(cft).front()/32 << ", " << std::get<2>(cft).front()%32
-             << "}    t:" << std::get<3>(cft) << std::endl << "path1: ";
-        for(size_t ii : node->indiv_paths_list.at(id1)[node->rep_id_list.at(id1)]){
-            std::cout << "{" << ii/32 << ", " << ii%32 << "}, ";
-        }
-        std::cout << std::endl << "path2: ";
-        for(size_t ii : node->indiv_paths_list.at(id2)[node->rep_id_list.at(id2)]){
-            std::cout << "{" << ii/32 << ", " << ii%32 << "}, ";
-        }
-        std::cout << std::endl << std::endl;
-        std::cout << "constraint: ";
-        int nn = 0;
-        for(auto ele : node->vertex_constraints){
-            bool ifprint = false;
-            for(auto ele1 : ele){
-                if(ele1.second.empty()){
-                    continue;
-                }
-                if(!ifprint){
-                    std::cout << std::endl  << "agent: " << nn << "  ";
-            std::cout << std::endl;
-                    ifprint = true;
-                }
-                std::cout << "t: " << ele1.first << "  [";
-                for(auto ele2 : ele1.second){
-                    std::cout << "{" << ele2/32 << ", " << ele2%32 << "}, ";
-                }
-                std::cout << "]" << std::endl;
-            }
-            nn ++;
-        }
-        getchar();
+    //     int _id1 = std::get<0>(cft);
+    //     int _id2 = std::get<1>(cft);
+    //     int id1 = _id1 >= 0 ? _id1 : -_id1-1;
+    //     int id2 = _id2 >= 0 ? _id2 : -_id2-1;
+    //     std::cout << std::endl << std::endl << "agent1: " << id1 << "  agent2: " << id2 << "  state: {" 
+    //         << std::get<2>(cft).front()/32 << ", " << std::get<2>(cft).front()%32
+    //          << "}    t:" << std::get<3>(cft) << std::endl << "path1: ";
+    //     for(size_t ii : node->indiv_paths_list.at(id1)[node->rep_id_list.at(id1)]){
+    //         std::cout << "{" << ii/32 << ", " << ii%32 << "}, ";
+    //     }
+    //     std::cout << std::endl << "path2: ";
+    //     for(size_t ii : node->indiv_paths_list.at(id2)[node->rep_id_list.at(id2)]){
+    //         std::cout << "{" << ii/32 << ", " << ii%32 << "}, ";
+    //     }
+    //     std::cout << std::endl << std::endl;
+    //     std::cout << "constraint: ";
+    //     int nn = 0;
+    //     for(auto ele : node->vertex_constraints){
+    //         bool ifprint = false;
+    //         for(auto ele1 : ele){
+    //             if(ele1.second.empty()){
+    //                 continue;
+    //             }
+    //             if(!ifprint){
+    //                 std::cout << std::endl  << "agent: " << nn << "  ";
+    //         std::cout << std::endl;
+    //                 ifprint = true;
+    //             }
+    //             std::cout << "t: " << ele1.first << "  [";
+    //             for(auto ele2 : ele1.second){
+    //                 std::cout << "{" << ele2/32 << ", " << ele2%32 << "}, ";
+    //             }
+    //             std::cout << "]" << std::endl;
+    //         }
+    //         nn ++;
+    //     }
+    //     getchar();
 
-        }
+    //     }
 
 
     //  exhaust remaing joint path in high-level node, if no confliction, then add to solution set
         for(auto iter = std::next(node->joint_path_list.begin()); iter != node->joint_path_list.end(); iter++){
-            if(DomPrune(hsolution_costs, *iter, Heps_prune)){
-                continue;
-            }
-            if(conflict_checker.is_conflict(*iter, node->indiv_paths_list, agent_num)){
+            if(DomPrune(hsolution_costs, *iter, Heps_prune) 
+            || conflict_checker.is_conflict(*iter, node->indiv_paths_list, agent_num)){
                 continue;
             }
             std::vector<std::vector<size_t>> new_hsolution;
@@ -549,7 +545,7 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
             }
             hsolution_ids.push_back(new_hsolution);
             hsolution_costs.push_back(new_cost);
-            std::cout << "there is a solution";
+            std::cout << "there is a solution" << std::endl;
             extra_solution ++;
         }
         
@@ -558,7 +554,7 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
         constraint_num ++;
         if (constraint_num % (500/agent_num) == 0) {
             auto tnow = std::chrono::high_resolution_clock::now(); // for timing.
-            auto duration1 = std::chrono::duration_cast<std::chrono::microseconds>(tnow - _t0);
+            auto duration1 = std::chrono::duration_cast<std::chrono::microseconds>(tnow - t0);
             std::cout << "[INFO] * Solver::Search, after " << constraint_num << " conflict splits " 
             << "       time = " << ((double)duration1.count())/1000000.0 << std::endl;
         }
@@ -645,15 +641,27 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
             }
         }
     }
-        // auto t2 = std::chrono::high_resolution_clock::now(); // for timing.
-        //     auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(t2 - _t1);
-        //     std::cout << "once node expansion" << "   time = " << ((double)duration2.count())/1000000.0 << std::endl;
+    std::cout << std::endl << std::endl;
+    for(size_t num = 0; num < hsolution_ids.size(); num ++){
+        std::cout << "SOLUTION " << num+1;
+        std::cout << " COST   " << "{";
+        if(vm["dim"].as<int>() == 2){
+            std::cout << hsolution_costs.at(num).at(0) << ", " << hsolution_costs.at(num).at(1);
+        }else{
+            std::cout << hsolution_costs.at(num).at(0) << ", " << hsolution_costs.at(num).at(1) << ", " << hsolution_costs.at(num).at(2);
+        }
+        std::cout << "}" << std::endl;
+    }
+
     std::cout << "Extra Solution Number = " << extra_solution << std::endl;
     std::cout << "NonDomTime = " << NonDomTime << std::endl;
     std::cout << "LowLevelTime = " << LowLevelTime << std::endl;
     std::cout << "DomPruneTime = " << DomPruneTime << std::endl;
     std::cout << "ConflictionTime = " << ConflictionTime << std::endl; 
-    std::cout << "DomPruneNum = " << DomPruneNum << "  Solution Num = " << hsolution_costs.size() << std::endl;
+    auto t1 = std::chrono::high_resolution_clock::now(); // for timing.
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0);
+    std::cout << "Total Time = " << ((double)duration.count())/1000000.0 << std::endl;
+    std::cout << "DomPruneNum/NodeExpandNum = " << DomPruneNum << "/" << constraint_num << std::endl;
     return constraint_num;
 }
 

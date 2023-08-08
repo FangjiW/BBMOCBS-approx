@@ -12,7 +12,7 @@ class Solver
 public:
     Solver(){};
     //  for joint_path_list
-    bool DomPrune(std::vector<CostVector> &solution_costs, std::list<JointPathPair>& joint_path_list, double eps);
+    bool DomPrune(std::vector<CostVector> &solution_costs, std::list<JointPathPair>& joint_path_list, double eps, int& DomPruneNum);
     //  for single joint path
     bool DomPrune(std::vector<CostVector>& solution_costs, JointPathPair& joint_path, double eps);
 

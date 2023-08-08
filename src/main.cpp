@@ -72,8 +72,8 @@ int main(int argc, char** argv)
     std::vector<Edge>  edges;
     p.read_map(vm["map"].as<std::string>(), map, id2coord);
     p.read_config(vm["config"].as<std::string>(), map, vm["agent_num"].as<int>(), start_end);
-    p.read_cost(vm["cost"].as<std::string>(), map, edges);
-    // p.generate_cost(map, edges, vm["dim"].as<int>());
+    // p.read_cost(vm["cost"].as<std::string>(), map, edges);
+    p.generate_cost(map, edges, vm["dim"].as<int>());
     map.ddelete();
 
 
@@ -90,27 +90,27 @@ int main(int argc, char** argv)
     delete(logger);
 
 
-/********************  Print  Path  Info  ************************/
-getchar();
-    std::cout << endl << endl;
-    for(size_t num = 0; num < hsolutions.size(); num ++){
-        std::cout << "SOLUTION   " << num+1 << endl;
-        std::cout << "COST   " << "{";
-        if(vm["dim"].as<int>() == 2){
-            std::cout << hsolution_costs.at(num).at(0) << ", " << hsolution_costs.at(num).at(1);
-        }else{
-            std::cout << hsolution_costs.at(num).at(0) << ", " << hsolution_costs.at(num).at(1) << ", " << hsolution_costs.at(num).at(2);
-        }
-        std::cout << "}" << endl;
-        for(size_t i = 0; i < hsolutions.at(num).size(); i++){
-            std::cout << "agent " << i+1 << ":" << std::endl;
-            for(size_t id : hsolutions.at(num).at(i)){
-                std::cout << "{" << id2coord[id].at(0) << ", " << id2coord[id].at(1) << "}, ";
-            }
-            std::cout << endl;
-        }
-        std::cout << endl << endl;
-    }
-    std::cout << "Total constraint number = " << constraint_num << std::endl;
-    std::cout << "RUN TIME: " << ((double)duration.count())/1000000.0 << " seconds" << std::endl;
+// /********************  Print  Path  Info  ************************/
+// getchar();
+//     std::cout << endl << endl;
+//     for(size_t num = 0; num < hsolutions.size(); num ++){
+//         std::cout << "SOLUTION   " << num+1 << endl;
+//         std::cout << "COST   " << "{";
+//         if(vm["dim"].as<int>() == 2){
+//             std::cout << hsolution_costs.at(num).at(0) << ", " << hsolution_costs.at(num).at(1);
+//         }else{
+//             std::cout << hsolution_costs.at(num).at(0) << ", " << hsolution_costs.at(num).at(1) << ", " << hsolution_costs.at(num).at(2);
+//         }
+//         std::cout << "}" << endl;
+//         for(size_t i = 0; i < hsolutions.at(num).size(); i++){
+//             std::cout << "agent " << i+1 << ":" << std::endl;
+//             for(size_t id : hsolutions.at(num).at(i)){
+//                 std::cout << "{" << id2coord[id].at(0) << ", " << id2coord[id].at(1) << "}, ";
+//             }
+//             std::cout << endl;
+//         }
+//         std::cout << endl << endl;
+//     }
+//     std::cout << "Total constraint number = " << constraint_num << std::endl;
+//     std::cout << "RUN TIME: " << ((double)duration.count())/1000000.0 << " seconds" << std::endl;
 }
