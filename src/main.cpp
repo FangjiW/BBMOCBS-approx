@@ -4,6 +4,9 @@
 #include <time.h>
 #include <fstream>
 #include <chrono>
+#include <stdlib.h>
+#include <dirent.h>
+#include <string>
 
 #include "Utils/Logger.h"
 #include "Utils/Solver.h"
@@ -71,23 +74,69 @@ int main(int argc, char** argv)
     std::vector<std::pair<size_t, size_t>>  start_end;
     std::vector<Edge>  edges;
     p.read_map(vm["map"].as<std::string>(), map, id2coord);
-    p.read_config(vm["config"].as<std::string>(), map, vm["agent_num"].as<int>(), start_end);
+    // p.read_config(vm["config"].as<std::string>(), map, vm["agent_num"].as<int>(), start_end);
     // p.read_cost(vm["cost"].as<std::string>(), map, edges);
-    p.generate_cost(map, edges, vm["dim"].as<int>());
-    map.ddelete();
+    // p.generate_cost(map, edges, vm["dim"].as<int>());
+
+    std::ofstream output;
+    if(vm["algorithm"].as<std::string>() == "Apex"){
+        output.open("../output/yes_" + vm["output"].as<std::string>() + "--n=" + std::to_string(vm["agent_num"].as<int>()) + "--" + std::to_string(vm["hem"].as<double>())
+        + ", " + std::to_string(vm["hep"].as<double>()) + ", " + std::to_string(vm["lem"].as<double>()) 
+        + ", " + std::to_string(vm["lep"].as<double>()));
+
+        auto current_time = std::time(nullptr);
+        output << std::ctime(&current_time) << std::endl;
+        output << "Map: " << vm["map"].as<std::string>() << std::endl;
+
+        output << vm["algorithm"].as<std::string>() << ", " << "hem = " << vm["hem"].as<double>() << ", "
+        << "hep = " << vm["hep"].as<double>() << ", lem = " << vm["lem"].as<double>()
+        << ", lep = " << vm["lep"].as<double>() << std::endl << "agent num = " << vm["agent_num"].as<int>() 
+        << std::endl << std::endl;
+    }else{
+        output.open("../output/" + vm["output"].as<std::string>() + "--n=" + std::to_string(vm["agent_num"].as<int>()) 
+        + "--" + vm["algorithm"].as<std::string>());
+        auto current_time = std::time(nullptr);
+        output << std::ctime(&current_time) << std::endl;
+        output << "Map: " << vm["map"].as<std::string>() << std::endl << vm["algorithm"].as<std::string>() << std::endl
+        << "agent num = " << vm["agent_num"].as<int>() 
+        << std::endl << std::endl;
+    }
+    
 
 
 /**************************  Search  *****************************/
     Solver      solver;
     HSolutionID        hsolutions;
     std::vector<CostVector>    hsolution_costs;
+    const char* directoryPath = (vm["config"].as<std::string>()).c_str();
+    DIR *dir;
+    struct dirent *entry;
+    dir = opendir(directoryPath);
+    int iteration = 0;
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_type == DT_REG) {
+            iteration ++;
+            char filePath[256];
+            snprintf(filePath, sizeof(filePath), "%s/%s", directoryPath, entry->d_name);
+            p.read_config((std::string)filePath, map, vm["agent_num"].as<int>(), start_end);
+            p.generate_cost(map, edges, vm["dim"].as<int>());
+            output << "************************************************************************" << std::endl;
+            output << "ITERATION:  " << iteration << std::endl << std::endl;
+            solver.search(map.graph_size, edges, vm, start_end, ms, logger, hsolutions, hsolution_costs, output);
+            std::cout << "FINISH ONCE" << std::endl;
+        }
+    }
+    map.ddelete();
+    // Solver      solver;
+    // HSolutionID        hsolutions;
+    // std::vector<CostVector>    hsolution_costs;
 
-    auto start_time = std::chrono::high_resolution_clock::now();    // record time
-    size_t constraint_num = solver.search(map.graph_size, edges, vm, start_end, ms, logger, hsolutions, hsolution_costs);
-    auto end_time = std::chrono::high_resolution_clock::now();
+    // auto start_time = std::chrono::high_resolution_clock::now();    // record time
+    // solver.search(map.graph_size, edges, vm, start_end, ms, logger, hsolutions, hsolution_costs, output);
+    // auto end_time = std::chrono::high_resolution_clock::now();
     
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-    delete(logger);
+    // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+    // delete(logger);
 
 
 // /********************  Print  Path  Info  ************************/

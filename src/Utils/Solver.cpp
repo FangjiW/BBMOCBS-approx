@@ -48,7 +48,10 @@ bool Solver::DomPrune(std::vector<CostVector>& solution_costs, std::list<JointPa
     bool is_prune = false;
     for (auto iter = joint_path_list.begin(); iter != joint_path_list.end(); ) {
         bool is_dominated = false;
-        for (auto& solution_cost : solution_costs) {
+        for (auto solution_cost : solution_costs) {
+            // std::cout << solution_cost.at(0) << ", " << solution_cost.at(1) << ", " << solution_cost.at(2) << std::endl;
+            // std::cout << iter->first.at(0) << ", " << iter->first.at(1) << ", " << iter->first.at(2) << std::endl;
+            // getchar();
             bool is_dominated_by_this_one = true;
             for (int i = 0; i < solution_cost.size(); i++) {
                 if (iter->first.at(i) * (1 + eps) < solution_cost.at(i)) {
@@ -58,6 +61,7 @@ bool Solver::DomPrune(std::vector<CostVector>& solution_costs, std::list<JointPa
             }
             if (is_dominated_by_this_one) {
                 DomPruneNum ++;
+                // getchar();
                 is_dominated = true;
                 iter = joint_path_list.erase(iter);
                 is_prune = true;
@@ -115,7 +119,7 @@ void Solver::NonDomJointPath(HighLevelNodePtr node, MergeStrategy ms, double eps
                 add_cost(std::get<0>(temp), node->indiv_apex_costs.at(i)[indiv_path.first]);
                 add_cost(std::get<1>(temp), node->indiv_real_costs.at(i)[indiv_path.first]);
                 std::get<2>(temp).push_back(indiv_path.first);
-                joint_path_vector.push_back(std::make_tuple(std::move(std::get<0>(temp)), std::move(std::get<1>(temp)), std::move(std::get<2>(temp))));
+                joint_path_vector.push_back(std::make_tuple(std::get<0>(temp), std::get<1>(temp), std::get<2>(temp)));
                 // std::push_heap(_joint_path_vector.begin(), _joint_path_vector.end(), more_than);
             }
         }
@@ -127,6 +131,7 @@ void Solver::NonDomJointPath(HighLevelNodePtr node, MergeStrategy ms, double eps
     for(auto& element : joint_path_vector){
         node->joint_path_list.push_back(std::make_pair(std::get<0>(element), std::get<2>(element)));
     }
+
     auto t2 = std::chrono::high_resolution_clock::now(); // for timing.
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - _t1);
     std::cout << " Non Dom time = " << ((double)duration.count()) / 1000000.0 << std::endl;
@@ -137,10 +142,10 @@ void Solver::NonDomJointPath(HighLevelNodePtr node, MergeStrategy ms, double eps
 //  BOA* and NAMOA*dr version
 void Solver::NonDomJointPath(HighLevelNodePtr node)
 {
-    // for(auto e : node->indiv_paths_list){
-    //     std::cout << e.size() << " ";
-    // }
-    // auto _t1 = std::chrono::high_resolution_clock::now();
+    for(auto e : node->indiv_paths_list){
+        std::cout << e.size() << " ";
+    }
+    auto _t1 = std::chrono::high_resolution_clock::now();
     JointPathPair temp;
     node->joint_path_list.clear();
     std::list<JointPathPair>& joint_path_list = node->joint_path_list;
@@ -166,10 +171,10 @@ void Solver::NonDomJointPath(HighLevelNodePtr node)
             return more_than<JointPathPair>(a, b);});
         NonDomVec(joint_path_list);
     }
-    // auto t2 = std::chrono::high_resolution_clock::now(); // for timing.
-    // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - _t1);
-    // std::cout << " Non Dom time = " << ((double)duration.count()) / 1000000.0 << std::endl;
-    // std::cout << node->joint_path_list.size();
+    auto t2 = std::chrono::high_resolution_clock::now(); // for timing.
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - _t1);
+    std::cout << " Non Dom time = " << ((double)duration.count()) / 1000000.0 << std::endl;
+    std::cout << node->joint_path_list.size();
     // getchar();
 }
 
@@ -340,7 +345,7 @@ bool Solver::HighLevelMerge(JointPathTuple& existing_path, JointPathTuple& new_p
         // if(0 < 0.5){
             bool can_merge1 = true, can_merge2 = true;
             for(int i = 0; i < apex.size(); i++){
-                if(std::get<1>(existing_path).at(1) >= ((double)apex.at(1))*(1+eps)){
+                if(std::get<1>(existing_path).at(i) >= ((double)apex.at(i))*(1+eps)){
                     can_merge1 = false;
                 }
             }
@@ -349,7 +354,7 @@ bool Solver::HighLevelMerge(JointPathTuple& existing_path, JointPathTuple& new_p
                 return true;
             }
             for(int i = 0; i < apex.size(); i++){
-                if(std::get<1>(new_path).at(1) >= ((double)apex.at(1))*(1+eps)){
+                if(std::get<1>(new_path).at(i) >= ((double)apex.at(i))*(1+eps)){
                     can_merge2 = false;
                 }
             }
@@ -361,7 +366,7 @@ bool Solver::HighLevelMerge(JointPathTuple& existing_path, JointPathTuple& new_p
         }else{
             bool can_merge1 = true, can_merge2 = true;
             for(int i = 0; i < apex.size(); i++){
-                if(std::get<1>(new_path).at(1) >= ((double)apex.at(1))*(1+eps)){
+                if(std::get<1>(new_path).at(i) >= ((double)apex.at(i))*(1+eps)){
                     can_merge1 = false;
                 }
             }
@@ -370,7 +375,7 @@ bool Solver::HighLevelMerge(JointPathTuple& existing_path, JointPathTuple& new_p
                 return true;
             }
             for(int i = 0; i < apex.size(); i++){
-                if(std::get<1>(existing_path).at(1) >= ((double)apex.at(1))*(1+eps)){
+                if(std::get<1>(existing_path).at(i) >= ((double)apex.at(i))*(1+eps)){
                     can_merge2 = false;
                 }
             }
@@ -389,14 +394,17 @@ bool Solver::HighLevelMerge(JointPathTuple& existing_path, JointPathTuple& new_p
 
 size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::program_options::variables_map& vm, 
         std::vector<std::pair<size_t, size_t>> start_end, MergeStrategy& ms, LoggerPtr& logger, 
-        HSolutionID& hsolution_ids, std::vector<CostVector>& hsolution_costs)
+        HSolutionID& hsolution_ids, std::vector<CostVector>& hsolution_costs, std::ofstream& Output)
 {
+    bool is_success = true;
+    auto start_time = std::clock();
+
     int agent_num = vm["agent_num"].as<int>();
     double Heps_merge_max = vm["hem"].as<double>();
     double Heps_prune = vm["hep"].as<double>();
     double Leps_merge = vm["lem"].as<double>();
     double Leps_prune = vm["lep"].as<double>();
-    double time = vm["cutoffTime"].as<int>();
+    double time_limit = vm["cutoffTime"].as<int>();
     std::string algorithm = vm["algorithm"].as<std::string>();
     std::string output = vm["output"].as<std::string>();
     MergeStrategy l_ms = MORE_SLACK;
@@ -422,7 +430,7 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
     HighLevelNodePtr root_node = std::make_shared<HighLevelNode>(agent_num);
     for(size_t i = 0; i < agent_num; i ++){
         single_run_map(graph_size, edges, start_end.at(i).first, start_end.at(i).second, output, 
-            algorithm, l_ms, logger, Leps_merge, Leps_prune, time, root_node->indiv_paths_list.at(i), 
+            algorithm, l_ms, logger, Leps_merge, Leps_prune, time_limit, root_node->indiv_paths_list.at(i), 
             root_node->indiv_apex_costs.at(i), root_node->indiv_real_costs.at(i), 
             root_node->vertex_constraints.at(i), root_node->edge_constraints.at(i));
     }
@@ -441,6 +449,10 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
     size_t constraint_num = 0;
     while(!open_list.empty())
     {
+        if((std::clock() - start_time)/CLOCKS_PER_SEC > time_limit){
+            is_success = false;
+            break;
+        }
         auto node = open_list.pop();
 
         // Dom Prune
@@ -530,7 +542,7 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
 
     //     }
 
-
+    if(Heps_merge > 0.001 || Heps_prune > 0.001 || Leps_merge > 0.001 || Leps_prune > 0.001){
     //  exhaust remaing joint path in high-level node, if no confliction, then add to solution set
         for(auto iter = std::next(node->joint_path_list.begin()); iter != node->joint_path_list.end(); iter++){
             if(DomPrune(hsolution_costs, *iter, Heps_prune) 
@@ -548,6 +560,7 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
             std::cout << "there is a solution" << std::endl;
             extra_solution ++;
         }
+    }
         
 
         auto _t1 = std::chrono::high_resolution_clock::now();
@@ -576,7 +589,7 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
             //  Low Level Search
                 auto _t_0_ = std::chrono::high_resolution_clock::now(); // for timing.
                 single_run_map(graph_size, edges, start_end.at(agent_id).first, start_end.at(agent_id).second, 
-                    output, algorithm, l_ms, logger, Leps_merge, Leps_prune, time, new_node->indiv_paths_list.at(agent_id), 
+                    output, algorithm, l_ms, logger, Leps_merge, Leps_prune, time_limit, new_node->indiv_paths_list.at(agent_id), 
                     new_node->indiv_apex_costs.at(agent_id), new_node->indiv_real_costs.at(agent_id), 
                     new_node->vertex_constraints[agent_id], new_node->edge_constraints[agent_id]); 
                 auto _t_1_ = std::chrono::high_resolution_clock::now();
@@ -616,7 +629,7 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
                     std::get<2>(cft).at(1-i), std::get<3>(cft));
 
                 single_run_map(graph_size, edges, start_end.at(agent_id).first, start_end.at(agent_id).second, 
-                    output, algorithm, l_ms, logger, Leps_merge, Leps_prune, time, new_node->indiv_paths_list.at(agent_id), 
+                    output, algorithm, l_ms, logger, Leps_merge, Leps_prune, time_limit, new_node->indiv_paths_list.at(agent_id), 
                     new_node->indiv_apex_costs.at(agent_id), new_node->indiv_real_costs.at(agent_id), 
                     new_node->vertex_constraints[agent_id], new_node->edge_constraints[agent_id]); 
 
@@ -641,27 +654,32 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
             }
         }
     }
-    std::cout << std::endl << std::endl;
-    for(size_t num = 0; num < hsolution_ids.size(); num ++){
-        std::cout << "SOLUTION " << num+1;
-        std::cout << " COST   " << "{";
-        if(vm["dim"].as<int>() == 2){
-            std::cout << hsolution_costs.at(num).at(0) << ", " << hsolution_costs.at(num).at(1);
-        }else{
-            std::cout << hsolution_costs.at(num).at(0) << ", " << hsolution_costs.at(num).at(1) << ", " << hsolution_costs.at(num).at(2);
-        }
-        std::cout << "}" << std::endl;
+    if(is_success){
+        Output << "SUCCESS" << std::endl << std::endl;
+    }else{
+        Output << "FAIL" << std::endl << std::endl;
     }
-
-    std::cout << "Extra Solution Number = " << extra_solution << std::endl;
-    std::cout << "NonDomTime = " << NonDomTime << std::endl;
-    std::cout << "LowLevelTime = " << LowLevelTime << std::endl;
-    std::cout << "DomPruneTime = " << DomPruneTime << std::endl;
-    std::cout << "ConflictionTime = " << ConflictionTime << std::endl; 
+    for(size_t num = 0; num < hsolution_ids.size(); num ++){
+        Output << "SOLUTION " << num+1;
+        Output << " COST   " << "{";
+        if(vm["dim"].as<int>() == 2){
+            Output << hsolution_costs.at(num).at(0) << ", " << hsolution_costs.at(num).at(1);
+        }else{
+            Output << hsolution_costs.at(num).at(0) << ", " << hsolution_costs.at(num).at(1) << ", " << hsolution_costs.at(num).at(2);
+        }
+        Output << "}" << std::endl;
+    }
+    Output << std::endl;
+    Output << "Extra Solution Number = " << extra_solution << std::endl;
+    Output << "NonDomTime = " << NonDomTime << std::endl;
+    Output << "LowLevelTime = " << LowLevelTime << std::endl;
+    Output << "DomPruneTime = " << DomPruneTime << std::endl;
+    Output << "ConflictionTime = " << ConflictionTime << std::endl; 
     auto t1 = std::chrono::high_resolution_clock::now(); // for timing.
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0);
-    std::cout << "Total Time = " << ((double)duration.count())/1000000.0 << std::endl;
-    std::cout << "DomPruneNum/NodeExpandNum = " << DomPruneNum << "/" << constraint_num << std::endl;
+    Output << "Total Time = " << ((double)duration.count())/1000000.0 << std::endl;
+    Output << "DomPruneNum/NodeExpandNum = " << DomPruneNum << "/" << constraint_num << std::endl;
+    Output << std::endl << std::endl;
     return constraint_num;
 }
 

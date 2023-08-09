@@ -36,7 +36,7 @@ public:
     //     std::vector<CostVector>& hsolution_costs);
     size_t search(size_t graph_size, std::vector<Edge>& edges, boost::program_options::variables_map& vm, 
         std::vector<std::pair<size_t, size_t>> start_end, MergeStrategy& ms, LoggerPtr& logger, 
-        HSolutionID& hsolution_ids, std::vector<CostVector>& hsolution_costs);
+        HSolutionID& hsolution_ids, std::vector<CostVector>& hsolution_costs, std::ofstream& output_file);
 
     //  return if can merge
     bool HighLevelMerge(JointPathTuple& existing_path, JointPathTuple& new_path, MergeStrategy ms, double eps);
