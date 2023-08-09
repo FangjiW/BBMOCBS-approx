@@ -80,7 +80,7 @@ int main(int argc, char** argv)
 
     std::ofstream output;
     if(vm["algorithm"].as<std::string>() == "Apex"){
-        output.open("../output/yes_" + vm["output"].as<std::string>() + "--n=" + std::to_string(vm["agent_num"].as<int>()) + "--" + std::to_string(vm["hem"].as<double>())
+        output.open("../2.out/" + vm["output"].as<std::string>() + "--n=" + std::to_string(vm["agent_num"].as<int>()) + "--" + std::to_string(vm["hem"].as<double>())
         + ", " + std::to_string(vm["hep"].as<double>()) + ", " + std::to_string(vm["lem"].as<double>()) 
         + ", " + std::to_string(vm["lep"].as<double>()));
 
