@@ -398,7 +398,7 @@ bool Solver::HighLevelMerge(JointPathTuple& existing_path, JointPathTuple& new_p
 }
 
 
-size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::program_options::variables_map& vm, 
+std::tuple<double, double, double, int, int> Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::program_options::variables_map& vm, 
         std::vector<std::pair<size_t, size_t>> start_end, MergeStrategy& ms, LoggerPtr& logger, 
         HSolutionID& hsolution_ids, std::vector<CostVector>& hsolution_costs, std::ofstream& Output)
 {
@@ -641,7 +641,7 @@ std::tuple<int, int, CostVector, size_t> cft;
             }
 
         }else{  //  edge confliction
-            for(int i = 0; i < 2; i++){     // 2 agents
+            for(int i = 0; i < 2; i++){
                 int agent_id = i == 0 ? std::get<0>(cft) : std::get<1>(cft);
                 auto new_node = std::make_shared<HighLevelNode>(*node);
                 new_node->indiv_paths_list.at(agent_id).clear();
@@ -651,10 +651,14 @@ std::tuple<int, int, CostVector, size_t> cft;
                 add_constraint(new_node->edge_constraints, agent_id, std::get<2>(cft).at(i), 
                     std::get<2>(cft).at(1-i), std::get<3>(cft));
 
+                auto _t_0_ = std::chrono::high_resolution_clock::now(); // for timing.
                 single_run_map(graph_size, edges, start_end.at(agent_id).first, start_end.at(agent_id).second, 
                     output, algorithm, l_ms, logger, Leps_merge, Leps_prune, time_limit, new_node->indiv_paths_list.at(agent_id), 
                     new_node->indiv_apex_costs.at(agent_id), new_node->indiv_real_costs.at(agent_id), 
                     new_node->vertex_constraints[agent_id], new_node->edge_constraints[agent_id]); 
+                auto _t_1_ = std::chrono::high_resolution_clock::now();
+                auto duration0__ = std::chrono::duration_cast<std::chrono::microseconds>(_t_1_ - _t_0_);
+                LowLevelTime += ((double)duration0__.count())/1000000.0;
 
                 if(new_node->indiv_paths_list.at(agent_id).empty()){
                     continue;
@@ -692,18 +696,18 @@ std::tuple<int, int, CostVector, size_t> cft;
         }
         Output << "}" << std::endl;
     }
-    Output << std::endl;
-    Output << "Extra Solution Number = " << extra_solution << std::endl;
-    Output << "NonDomTime = " << NonDomTime << std::endl;
-    Output << "LowLevelTime = " << LowLevelTime << std::endl;
-    Output << "DomPruneTime = " << DomPruneTime << std::endl;
-    Output << "ConflictionTime = " << ConflictionTime << std::endl; 
+    // Output << std::endl;
+    // Output << "NonDomTime = " << NonDomTime << std::endl;
+    // Output << "LowLevelTime = " << LowLevelTime << std::endl;
+    // Output << "DomPruneTime = " << DomPruneTime << std::endl;
+    // Output << "ConflictionTime = " << ConflictionTime << std::endl; 
     auto t1 = std::chrono::high_resolution_clock::now(); // for timing.
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0);
-    Output << "Total Time = " << ((double)duration.count())/1000000.0 << std::endl;
-    Output << "DomPruneNum/NodeExpandNum = " << DomPruneNum << "/" << constraint_num << std::endl;
-    Output << std::endl << std::endl;
-    return constraint_num;
+    double TotalTime = ((double)duration.count())/1000000.0;
+    // Output << "Total Time = " << TotalTime<< std::endl;
+    // Output << "DomPruneNum/NodeExpandNum = " << DomPruneNum << "/" << constraint_num << std::endl;
+    // Output << std::endl << std::endl;
+    return std::tuple<double, double, double, int, int>(NonDomTime, LowLevelTime, TotalTime, DomPruneNum, constraint_num);
 }
 
 

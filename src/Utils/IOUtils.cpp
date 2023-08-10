@@ -236,6 +236,7 @@ void PreProcessor::read_map(std::string map_file_name, Map& map, std::unordered_
 
 void PreProcessor::read_config(std::string config_file, Map map, int agent_num, std::vector<std::pair<size_t, size_t>>&  start_end)
 {
+    start_end.clear();
     // std::cout << config_file[config_file.length()-1];
     // getchar();
     if(config_file[config_file.length()-1] == 'g'){
@@ -289,6 +290,7 @@ void PreProcessor::read_config(std::string config_file, Map map, int agent_num, 
 
 void PreProcessor::generate_cost(Map map, std::vector<Edge>& edges, int dim)
 {
+    edges.clear();
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     Map cost_map1(map.width, map.height);
     Map cost_map2(map.width, map.height);
