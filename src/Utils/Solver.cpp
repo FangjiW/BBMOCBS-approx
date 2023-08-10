@@ -43,10 +43,16 @@ void Solver::add_constraint(std::vector<EdgeConstraint>& edge_constraints, size_
     edge_constraints.at(agent_id)[source][time].push_back(target);
 }
 
-bool Solver::DomPrune(std::vector<CostVector>& solution_costs, std::list<JointPathPair>& joint_path_list, double eps, int& DomPruneNum)
+bool Solver::DomPrune(std::vector<CostVector>& solution_costs, std::list<JointPathPair>& joint_path_list, std::vector<CostSet>& indiv_real_costs, double eps, int& DomPruneNum)
 {
+    int agent_num = joint_path_list.front().second.size();
     bool is_prune = false;
     for (auto iter = joint_path_list.begin(); iter != joint_path_list.end(); ) {
+        CostVector real_cost(joint_path_list.front().first.size(), 0);
+        for(int i = 0; i < agent_num; i ++){
+            add_cost(real_cost, indiv_real_costs.at(i)[iter->second.at(i)]);
+        }
+        
         bool is_dominated = false;
         for (auto solution_cost : solution_costs) {
             // std::cout << solution_cost.at(0) << ", " << solution_cost.at(1) << ", " << solution_cost.at(2) << std::endl;
@@ -54,7 +60,7 @@ bool Solver::DomPrune(std::vector<CostVector>& solution_costs, std::list<JointPa
             // getchar();
             bool is_dominated_by_this_one = true;
             for (int i = 0; i < solution_cost.size(); i++) {
-                if (iter->first.at(i) * (1 + eps) < solution_cost.at(i)) {
+                if (real_cost.at(i) * (1 + eps) < solution_cost.at(i)) {
                     is_dominated_by_this_one = false;
                     break;
                 }
@@ -402,7 +408,7 @@ size_t Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::progra
     int agent_num = vm["agent_num"].as<int>();
     double Heps_merge_max = vm["hem"].as<double>();
     double Heps_conflict_prune = vm["hep"].as<double>();
-    double Heps_nonconflict_prune = 0;
+    double Heps_nonconflict_prune = 0.001;
     // double Heps_conflict_prune = 0;
     double Leps_merge = vm["lem"].as<double>();
     double Leps_prune = vm["lep"].as<double>();
@@ -460,7 +466,7 @@ std::tuple<int, int, CostVector, size_t> cft;
 
         // Dom Prune 
         auto _t3 = std::chrono::high_resolution_clock::now();
-        if(DomPrune(hsolution_costs, node->joint_path_list, Heps_nonconflict_prune, DomPruneNum)){
+        if(DomPrune(hsolution_costs, node->joint_path_list, node->indiv_real_costs, Heps_nonconflict_prune, DomPruneNum)){
             if(node->joint_path_list.empty()){
                 continue;
             }
@@ -480,10 +486,7 @@ std::tuple<int, int, CostVector, size_t> cft;
                 if(node->joint_path_list.empty()){
                     continue;
                 }
-                node->rep_id_list = node->joint_path_list.front().second;
-                node->rep_apex_cost = node->joint_path_list.front().first;
-
-                DomPrune(hsolution_costs, node->joint_path_list, Heps_nonconflict_prune, DomPruneNum);
+                DomPrune(hsolution_costs, node->joint_path_list, node->indiv_real_costs, Heps_nonconflict_prune, DomPruneNum);
                 if(node->joint_path_list.empty()){
                     continue;
                 }
