@@ -64,7 +64,7 @@ bool ApexSearch::is_dominated(ApexPathPairPtr ap, size_t target){
 
 void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, CostSet& solution_real_costs, 
         size_t source, size_t target, Heuristic &heuristic, VertexConstraint& vertex_constraints, EdgeConstraint& edge_constraints,
-        unsigned int time_limit) 
+        unsigned int time_limit, CAT& cat) 
 {
     init_search();
 
@@ -99,7 +99,19 @@ void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs,
     ap = std::make_shared<ApexPathPair>(source_node, source_node, heuristic);
     open.insert(ap);
 
+// int i = 0 ;
     while (open.empty() == false) {
+        // i ++;
+        // if(i > 100000){
+        //     for(int j = 0; j < cat.size(); j++){
+        //         for(int k = 0; k < cat.at(j).size(); k++){
+        //             std::cout << cat.at(j).at(k) << " ";
+        //         }
+        //         std::cout << std::endl;
+        //         std::cout << "state" << j << ":" << std::endl; getchar();
+        //     }
+        // getchar();
+        // }
         if ((std::clock() - start_time)/CLOCKS_PER_SEC > time_limit){
             for (auto solution = ap_solutions.begin(); solution != ap_solutions.end(); ++solution) {
                 solutions.push_back((*solution)->path_node);
@@ -152,6 +164,10 @@ void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs,
             //     (bottom_right_next_g[1] >= min_g2[next_id])) {
             if (is_dominated(next_ap, target)){
                 continue;
+            }
+
+            if(std::find(cat.at(next_ap->id).begin(), cat.at(next_ap->id).end(), next_ap->t) != cat.at(next_ap->id).end()){
+                next_ap->path_node->conflict_num ++;
             }
 
             // If not dominated extend path pair and push to queue

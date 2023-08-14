@@ -19,6 +19,8 @@ const MergeStrategy DEFAULT_MERGE_STRATEGY = MergeStrategy::SMALLER_G2;
 
 using namespace std;
 
+std::unordered_map<size_t, std::vector<int>> id2coord;  // node_id to coordinate
+
 int main(int argc, char** argv)
 {
 
@@ -72,7 +74,6 @@ if(vm["dim"].as<int>() == 3){
 Map map;
 PreProcessor p;
 std::vector<Edge>  edges;
-std::unordered_map<size_t, std::vector<int>> id2coord;
 std::vector<std::pair<size_t, size_t>>  start_end;
 p.read_map(vm["map"].as<std::string>(), map, id2coord);
 // p.read_config(vm["config"].as<std::string>(), map, vm["agent_num"].as<int>(), start_end);
@@ -81,7 +82,7 @@ p.read_map(vm["map"].as<std::string>(), map, id2coord);
 
 std::ofstream output;
 if(vm["algorithm"].as<std::string>() == "Apex"){
-    output.open("../1.out/room-32-32-4/" + std::to_string(vm["agent_num"].as<int>()) + "--" + std::to_string(vm["hem"].as<double>())
+    output.open("../1.out/random-32-32-20/n=" + std::to_string(vm["agent_num"].as<int>()) + "/" + std::to_string(vm["hem"].as<double>())
     + ", " + std::to_string(vm["hep"].as<double>()) + ", " + std::to_string(vm["lem"].as<double>()) 
     + ", " + std::to_string(vm["lep"].as<double>()));
 
@@ -110,35 +111,52 @@ const char* directoryPath = (vm["config"].as<std::string>()).c_str();
 DIR *dir;
 struct dirent *entry;
 dir = opendir(directoryPath);
-int iteration = 0;
+int scene_num = 0;
+int total_num = 0;
+int total_success_num = 0;
 std::vector<std::vector<std::tuple<double, double, double, int, int>>>  data;
+double t_NonDomTime = 0, t_LowLevelTime = 0, t_TotalTime = 0, t_DomPruneNum = 0, t_constraint_num = 0;
 while ((entry = readdir(dir)) != NULL) {
     if (entry->d_type == DT_REG) {
-        iteration ++;
-        if(iteration == 2){
-            continue;
-        }
+        scene_num ++;
+        // if(scene_num == 1 ){
+        //     continue;
+        // }
         char filePath[256];
         snprintf(filePath, sizeof(filePath), "%s/%s", directoryPath, entry->d_name);
         p.read_config((std::string)filePath, map, vm["agent_num"].as<int>(), start_end);
         output << "************************************************************************" << std::endl;
-        output << "ITERATION:  " << iteration << std::endl << std::endl;
+        output << "Config File:  " << (std::string)filePath << std::endl << std::endl;
         std::vector<std::tuple<double, double, double, int, int>> temp;
+        int success_num = 0;
         for(int i = 0; i < 5; i++){
+            total_num ++;
             Solver      solver;
             HSolutionID        hsolutions;
             std::vector<CostVector>    hsolution_costs;
             p.generate_cost(map, edges, vm["dim"].as<int>());
-            temp.push_back(solver.search(map.graph_size, edges, vm, start_end, ms, logger, hsolutions, hsolution_costs, output));
-            std::cout << "iteration: " << iteration << "      run number: " << i+1 << std::endl;
+            auto one_data = solver.search(map.graph_size, edges, vm, start_end, ms, logger, hsolutions, hsolution_costs, output);
+            if (std::get<2>(one_data) > vm["cutoffTime"].as<int>()){
+                continue;
+            }
+            success_num ++;
+            total_success_num ++;
+            temp.push_back(one_data);
+            std::cout << "iteration: " << scene_num << "      run number: " << i+1 << std::endl;
         }
         double NonDomTime = 0, LowLevelTime = 0, TotalTime = 0, DomPruneNum = 0, constraint_num = 0;
-        for(int i = 0; i < 5; i++){
-            NonDomTime += std::get<0>(temp.at(i))/5.0;
-            LowLevelTime += std::get<1>(temp.at(i))/5.0;
-            TotalTime += std::get<2>(temp.at(i))/5.0;
-            DomPruneNum += std::get<3>(temp.at(i))/5.0;
-            constraint_num += std::get<4>(temp.at(i))/5.0;
+        for(int i = 0; i < temp.size(); i++){
+            NonDomTime += std::get<0>(temp.at(i))/(double)success_num;
+            LowLevelTime += std::get<1>(temp.at(i))/(double)success_num;
+            TotalTime += std::get<2>(temp.at(i))/(double)success_num;
+            DomPruneNum += std::get<3>(temp.at(i))/(double)success_num;
+            constraint_num += std::get<4>(temp.at(i))/(double)success_num;
+
+            t_NonDomTime += std::get<0>(temp.at(i));
+            t_LowLevelTime += std::get<1>(temp.at(i));
+            t_TotalTime += std::get<2>(temp.at(i));
+            t_DomPruneNum += std::get<3>(temp.at(i));
+            t_constraint_num += std::get<4>(temp.at(i));
         }
         output << std::endl;
         output << "NonDomTime = " << NonDomTime << std::endl;
@@ -149,6 +167,12 @@ while ((entry = readdir(dir)) != NULL) {
         std::cout << "FINISH ONCE" << std::endl;
     }
 }
+output << "AVERAGE :" << std::endl;
+output << "NonDomTime = " << t_NonDomTime/(double)total_success_num << std::endl;
+output << "LowLevelTime = " << t_LowLevelTime/(double)total_success_num << std::endl;
+output << "Total Time = " << t_TotalTime/(double)total_success_num << std::endl;
+output << "DomPruneNum/NodeExpandNum = " << t_DomPruneNum/(double)total_success_num << "/" << t_constraint_num/(double)total_success_num << std::endl;
+output << "Success Rate = " << total_success_num << "/" << total_num << " = " << (double)total_success_num/total_num;
 map.ddelete();
     // Solver      solver;
     // HSolutionID        hsolutions;

@@ -22,7 +22,7 @@ public:
 
     void operator()(PathSet& solution_ids, CostSet& solution_apex_costs, CostSet& solution_real_costs, 
         size_t source, size_t target, Heuristic &heuristic, VertexConstraint& vertex_constraints, 
-        EdgeConstraint& edge_constraints, unsigned int time_limit);
+        EdgeConstraint& edge_constraints, unsigned int time_limit, CAT& cat);
 
     std::vector<std::pair<std::clock_t, NodePtr>> get_sol_log(){return solution_log;}
 };

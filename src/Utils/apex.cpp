@@ -69,6 +69,7 @@ ApexPathPair::ApexPathPair(const ApexPathPairPtr parent, const Edge&  edge): h(p
   this->apex = std::make_shared<Node>(next_id, new_apex_g, new_h);
   this->path_node = std::make_shared<Node>(next_id, new_g, new_h, new_t);
   this->path_node->parent = parent->path_node;
+  this->path_node->conflict_num = parent->path_node->conflict_num;
   this->t = new_t;
 }
 
@@ -153,7 +154,26 @@ bool ApexPathPair::update_nodes_by_merge_if_bounded(const ApexPathPairPtr &other
     if (! is_bounded(new_apex, new_path_node, eps)){
       return false;
     }
-  }else{
+  }else if(s == MergeStrategy::LEAST_CONFLICT){
+    if(this->path_node->conflict_num <= other->path_node->conflict_num){
+      if (is_bounded(new_apex, this->path_node, eps)){
+        new_path_node = this->path_node;
+      }else if (is_bounded(new_apex, other->path_node, eps)){
+        new_path_node = other->path_node;
+      }else{
+        return false;
+      }
+    }else{
+      if (is_bounded(new_apex, other->path_node, eps)){
+        new_path_node = other->path_node;
+      }else if (is_bounded(new_apex, this->path_node, eps)){
+        new_path_node = this->path_node;
+      }else{
+        return false;
+      }
+    }
+  }
+  else{
     std::cerr << "merge strategy not known" << std::endl;
     exit(-1);
   }

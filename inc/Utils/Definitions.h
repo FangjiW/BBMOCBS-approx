@@ -88,7 +88,8 @@ struct Node {
     std::vector<size_t>    g;
     std::vector<size_t>    h;
     std::vector<size_t>    f;
-    NodePtr         parent;
+    NodePtr  parent;
+    int  conflict_num = 0;
     size_t t = 0;   // time
 
     Node(size_t id, std::vector<size_t> g, std::vector<size_t> h, NodePtr parent=nullptr)
@@ -169,7 +170,7 @@ struct PathPair {
     friend std::ostream& operator<<(std::ostream &stream, const PathPair &pp);
 };
 
-enum MergeStrategy {SMALLER_G2, RANDOM, MORE_SLACK, SMALLER_G2_FIRST, REVERSE_LEX};
+enum MergeStrategy {SMALLER_G2, RANDOM, MORE_SLACK, SMALLER_G2_FIRST, REVERSE_LEX, LEAST_CONFLICT};
 
 struct ApexPathPair {
     size_t      id; // state of the node
@@ -235,6 +236,7 @@ using PathSet = std::unordered_map<size_t, std::vector<size_t>>;
 using CostSet = std::unordered_map<size_t, std::vector<size_t>>;
 using JointPathPair = std::pair<CostVector, std::vector<size_t>>;
 using JointPathTuple = std::tuple<CostVector, CostVector, std::vector<size_t>>;
+using CAT = std::vector<std::vector<int>>;
 
 inline void add_cost(CostVector& a, const CostVector& b)
 {

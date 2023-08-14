@@ -34,6 +34,9 @@ public:
     // void search(size_t graph_size, std::vector<Edge>& edges, boost::program_options::variables_map& vm, 
     //     size_t agent_num, double eps, MergeStrategy& ms, LoggerPtr& logger, HSolutionID& hsolution_ids, 
     //     std::vector<CostVector>& hsolution_costs);
+
+    void calculateCAT(HighLevelNodePtr, CAT& cat, int agent_id);
+
     std::tuple<double, double, double, int, int> search(size_t graph_size, std::vector<Edge>& edges, boost::program_options::variables_map& vm, 
         std::vector<std::pair<size_t, size_t>> start_end, MergeStrategy& ms, LoggerPtr& logger, 
         HSolutionID& hsolution_ids, std::vector<CostVector>& hsolution_costs, std::ofstream& output_file);
