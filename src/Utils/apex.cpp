@@ -155,11 +155,21 @@ bool ApexPathPair::update_nodes_by_merge_if_bounded(const ApexPathPairPtr &other
       return false;
     }
   }else if(s == MergeStrategy::LEAST_CONFLICT){
-    if(this->path_node->conflict_num <= other->path_node->conflict_num){
+    if(this->path_node->conflict_num < other->path_node->conflict_num){
       if (is_bounded(new_apex, this->path_node, eps)){
         new_path_node = this->path_node;
       }else if (is_bounded(new_apex, other->path_node, eps)){
+        return false;
         new_path_node = other->path_node;
+      }else{
+        return false;
+      }
+    }else if(this->path_node->conflict_num > other->path_node->conflict_num){
+      if (is_bounded(new_apex, other->path_node, eps)){
+        new_path_node = other->path_node;
+      }else if (is_bounded(new_apex, this->path_node, eps)){
+        return false;
+        new_path_node = this->path_node;
       }else{
         return false;
       }

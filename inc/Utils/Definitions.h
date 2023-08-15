@@ -235,7 +235,7 @@ using CostVector = std::vector<size_t>;
 using PathSet = std::unordered_map<size_t, std::vector<size_t>>;
 using CostSet = std::unordered_map<size_t, std::vector<size_t>>;
 using JointPathPair = std::pair<CostVector, std::vector<size_t>>;
-using JointPathTuple = std::tuple<CostVector, CostVector, std::vector<size_t>>;
+using JointPathTuple = std::tuple<CostVector, CostVector, std::vector<size_t>, int>;
 using CAT = std::vector<std::vector<int>>;
 
 inline void add_cost(CostVector& a, const CostVector& b)
@@ -282,6 +282,7 @@ public:
     CostVector                          rep_apex_cost;
     std::vector<VertexConstraint>       vertex_constraints;
     std::vector<EdgeConstraint>         edge_constraints;
+    std::unordered_map<int, int>        conflict_num;    // the latest low-level agent's conflict_num with other agents
     
     std::list<JointPathPair>            joint_path_list;
     // std::vector<JointPathPtr>           all_joint_path;

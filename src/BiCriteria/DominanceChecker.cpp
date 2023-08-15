@@ -74,24 +74,21 @@ void LocalCheckLinear::add_node(ApexPathPairPtr ap){
 }
 
 bool SolutionCheckLinear::is_dominated(ApexPathPairPtr node){
+    //  if node->path_node can bound any one apex in solutions, and node->path_node's constraint_num is less, then
+    //  preserve it
+    for (auto ap: solutions){
+        if(node->path_node->conflict_num < ap->path_node->conflict_num && is_bounded(ap->apex, node->path_node, eps)){
+            return false;
+        }
+    }
     for (auto ap: solutions){
         if(node->path_node->conflict_num < ap->path_node->conflict_num && !is_bounded(node->apex, ap->apex)){
             continue;
         }
-        // if (is_bounded(node->apex, ap->apex)){
         if (ap->update_apex_by_merge_if_bounded(node->apex, eps)){
-            // assert(ap->update_apex_by_merge_if_bounded(node->apex, eps));
             return true;
         }
     }
-    // std::cout << "node id" << node->id << std::endl;
-    // std::cout << "conflict num: " << node->path_node->conflict_num << std::endl;
-    // std::cout << node->apex->f.at(0) << ", " << node->apex->f.at(1) << ", " << node->apex->f.at(2) << std::endl;
-    // std::cout << "solution num: " << solutions.size() << std::endl;
-    // for(auto ap : solutions){
-    //     std::cout << ap->apex->f.at(0) << ", " << ap->apex->f.at(1) << ", " << ap->apex->f.at(2) << std::endl;  
-    //     std::cout << ap->path_node->conflict_num << std::endl;
-    // }
     return false;
 }
 

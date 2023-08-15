@@ -11,7 +11,7 @@ BOAStar::BOAStar(const AdjacencyMatrix &adj_matrix, Pair<double> eps, const Logg
 
 void BOAStar::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, CostSet& solution_real_costs, 
         size_t source, size_t target, Heuristic &heuristic, VertexConstraint& vertex_constraints, EdgeConstraint& edge_constraints,
-        unsigned int time_limit, CAT& cat)  {
+        unsigned int time_limit, CAT& cat, std::unordered_map<int, int>& conflict_num_map)  {
     // int time_limit = 300;
     // std::vector<NodePtr> solutions;
     SolutionSet solutions;

@@ -17,7 +17,7 @@ public:
 
     void operator()(PathSet& solution_ids, CostSet& solution_apex_costs, CostSet& solution_real_costs, 
         size_t source, size_t target, Heuristic &heuristic, VertexConstraint& vertex_constraints, EdgeConstraint& edge_constraints,
-        unsigned int time_limit, CAT& cat);
+        unsigned int time_limit, CAT& cat, std::unordered_map<int, int>& conflict_num_map);
 
 };
 

@@ -64,7 +64,7 @@ bool ApexSearch::is_dominated(ApexPathPairPtr ap, size_t target){
 
 void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, CostSet& solution_real_costs, 
         size_t source, size_t target, Heuristic &heuristic, VertexConstraint& vertex_constraints, EdgeConstraint& edge_constraints,
-        unsigned int time_limit, CAT& cat) 
+        unsigned int time_limit, CAT& cat, std::unordered_map<int, int>& conflict_num_map) 
 {
     init_search();
 
@@ -180,8 +180,15 @@ void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs,
         // next_ap = std::make_shared<ApexPathPair>(ap, Edge(ap->id, ap->id, std::vector<size_t>({0, 0})));    // remain place action
         // this->insert(next_ap, open);
     }
+    // for(auto solution : ap_solutions){
+    //     std::cout << solution->path_node->conflict_num << std::endl;
+    // }
 
     // Pair solutions is used only for logging, as we need both the solutions for testing reasons
+    solution_ids.clear();
+    solution_apex_costs.clear();
+    solution_real_costs.clear();
+    conflict_num_map.clear();
     for (size_t i = 0; i < ap_solutions.size(); i++){
         solutions.push_back(ap_solutions.at(i)->path_node);
         NodePtr pointer = ap_solutions.at(i)->path_node;
@@ -198,6 +205,7 @@ void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs,
         solution_ids.insert(std::make_pair(i, id_vector));
         solution_apex_costs.insert(std::make_pair(i, ap_solutions.at(i)->apex->g));
         solution_real_costs.insert(std::make_pair(i, ap_solutions.at(i)->path_node->g));
+        conflict_num_map.insert(std::make_pair(i, ap_solutions.at(i)->path_node->conflict_num));
     }
     
     this->end_logging(solutions, true);
