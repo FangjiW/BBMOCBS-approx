@@ -31,8 +31,9 @@ desc.add_options()
     ("help", "produce help message")
     ("map,m", po::value<std::string>()->required(), "Map File")
     ("cost,c", po::value<std::string>()->default_value(""), "Cost File")
-    ("config", po::value<std::string>()->required(), "Configure File")
+    ("config", po::value<std::string>()->default_value(""), "Configure File")
     ("dim,d", po::value<int>()->default_value(2), "dimension of cost function")
+    ("eps,e", po::value<double>()->default_value(0), "Approximate factor")
     ("hem", po::value<double>()->default_value(0), "High Level merge approximate factor")
     ("lem", po::value<double>()->default_value(0), "Low Level merge approximate factor")
     ("hep", po::value<double>()->default_value(0), "High Level prune approximate factor")
@@ -41,8 +42,9 @@ desc.add_options()
     ("merge", po::value<std::string>()->default_value(""), "strategy for merging apex node pair: SMALLER_G2, RANDOM or MORE_SLACK")
     ("algorithm,a", po::value<std::string>()->default_value("Apex"), "low-level solvers (BOA, PPA or Apex search)")
     ("cutoffTime,t", po::value<int>()->default_value(300), "cutoff time (seconds)")
+    ("runtimes,r", po::value<int>()->default_value(3), "total runing times per scen")
 
-    ("output,o", po::value<std::string>()->required(), "Name of the output file")
+    ("output,o", po::value<std::string>()->default_value("output.txt"), "Name of the output file")
     ("logging_file", po::value<std::string>()->default_value(""), "logging file" )
     ;
 po::variables_map vm;
@@ -73,18 +75,18 @@ if(vm["dim"].as<int>() == 3){
 /*************************  Build  Map  ****************************/
 Map map;
 PreProcessor p;
-std::vector<Edge>  edges;
 std::vector<std::pair<size_t, size_t>>  start_end;
-p.read_map(vm["map"].as<std::string>(), map, id2coord);
+p.read_map("../dataset/" + vm["map"].as<std::string>() + "/" + vm["map"].as<std::string>() + ".map", map, id2coord);
 // p.read_config(vm["config"].as<std::string>(), map, vm["agent_num"].as<int>(), start_end);
 // p.read_cost(vm["cost"].as<std::string>(), map, edges);
 // p.generate_cost(map, edges, vm["dim"].as<int>());
 
 std::ofstream output;
 if(vm["algorithm"].as<std::string>() == "Apex"){
-    output.open("../1.out/random-32-32-20/n=" + std::to_string(vm["agent_num"].as<int>()) + "/" + std::to_string(vm["hem"].as<double>())
-    + ", " + std::to_string(vm["hep"].as<double>()) + ", " + std::to_string(vm["lem"].as<double>()) 
-    + ", " + std::to_string(vm["lep"].as<double>()));
+    output.open("../" + std::to_string(vm["dim"].as<int>()) + ".out/" + vm["map"].as<std::string>() + "/n=" 
+    + std::to_string(vm["agent_num"].as<int>()) + "/" + std::to_string(vm["hem"].as<double>()).substr(0, 4)
+    + ", " + std::to_string(vm["hep"].as<double>()).substr(0, 4) + ", " + std::to_string(vm["lem"].as<double>()).substr(0, 4) 
+    + ", " + std::to_string(vm["lep"].as<double>()).substr(0, 4));
 
     auto current_time = std::time(nullptr);
     output << std::ctime(&current_time) << std::endl;
@@ -95,8 +97,9 @@ if(vm["algorithm"].as<std::string>() == "Apex"){
     << ", lep = " << vm["lep"].as<double>() << std::endl << "agent num = " << vm["agent_num"].as<int>() 
     << std::endl << std::endl;
 }else{
-    output.open("../output/" + vm["output"].as<std::string>() + "--n=" + std::to_string(vm["agent_num"].as<int>()) 
-    + "--" + vm["algorithm"].as<std::string>());
+    output.open("../" + std::to_string(vm["dim"].as<int>()) + ".out/" + vm["map"].as<std::string>() + "/n=" 
+    + std::to_string(vm["agent_num"].as<int>()) + "/" 
+    + vm["algorithm"].as<std::string>() + "-" + std::to_string(vm["eps"].as<double>()).substr(0, 4));
     auto current_time = std::time(nullptr);
     output << std::ctime(&current_time) << std::endl;
     output << "Map: " << vm["map"].as<std::string>() << std::endl << vm["algorithm"].as<std::string>() << std::endl
@@ -105,12 +108,11 @@ if(vm["algorithm"].as<std::string>() == "Apex"){
 }
 
 
-
 /**************************  Search  *****************************/
-const char* directoryPath = (vm["config"].as<std::string>()).c_str();
+std::string directoryPath = "../dataset/" + vm["map"].as<std::string>() + "/config";
 DIR *dir;
 struct dirent *entry;
-dir = opendir(directoryPath);
+dir = opendir(directoryPath.c_str());
 int scene_num = 0;
 int total_num = 0;
 int total_success_num = 0;
@@ -119,22 +121,24 @@ double t_NonDomTime = 0, t_LowLevelTime = 0, t_TotalTime = 0, t_DomPruneNum = 0,
 while ((entry = readdir(dir)) != NULL) {
     if (entry->d_type == DT_REG) {
         scene_num ++;
-        // if(scene_num == 1 ){
-        //     continue;
-        // }
-        char filePath[256];
-        snprintf(filePath, sizeof(filePath), "%s/%s", directoryPath, entry->d_name);
-        p.read_config((std::string)filePath, map, vm["agent_num"].as<int>(), start_end);
+        if(scene_num > 8){
+            break;
+        }
+        std::string filePath = directoryPath + "/" + (std::string)entry->d_name;
+        p.read_config(filePath, map, vm["agent_num"].as<int>(), start_end);
         output << "************************************************************************" << std::endl;
-        output << "Config File:  " << (std::string)filePath << std::endl << std::endl;
+        output << "Config File:  " << filePath << std::endl << std::endl;
         std::vector<std::tuple<double, double, double, int, int>> temp;
         int success_num = 0;
-        for(int i = 0; i < 5; i++){
+        for(int i = 1; i < vm["runtimes"].as<int>()+1; i++){
+            std::cout << "iteration: " << scene_num << "      run number: " << i << std::endl;
             total_num ++;
             Solver      solver;
             HSolutionID        hsolutions;
             std::vector<CostVector>    hsolution_costs;
-            p.generate_cost(map, edges, vm["dim"].as<int>());
+            std::vector<Edge>  edges;
+            p.read_cost("../dataset/" + vm["map"].as<std::string>() + "/cost/" + std::to_string(vm["dim"].as<int>()) + "/" + std::to_string(i) + ".cost", map, edges);
+            output << "COST MAP:" <<  std::to_string(vm["dim"].as<int>()) + "/" + std::to_string(i) + ".cost" << std::endl << std::endl;
             auto one_data = solver.search(map.graph_size, edges, vm, start_end, ms, logger, hsolutions, hsolution_costs, output);
             if (std::get<2>(one_data) > vm["cutoffTime"].as<int>()){
                 continue;
@@ -142,7 +146,6 @@ while ((entry = readdir(dir)) != NULL) {
             success_num ++;
             total_success_num ++;
             temp.push_back(one_data);
-            std::cout << "iteration: " << scene_num << "      run number: " << i+1 << std::endl;
         }
         double NonDomTime = 0, LowLevelTime = 0, TotalTime = 0, DomPruneNum = 0, constraint_num = 0;
         for(int i = 0; i < temp.size(); i++){
@@ -173,7 +176,6 @@ output << "LowLevelTime = " << t_LowLevelTime/(double)total_success_num << std::
 output << "Total Time = " << t_TotalTime/(double)total_success_num << std::endl;
 output << "DomPruneNum/NodeExpandNum = " << t_DomPruneNum/(double)total_success_num << "/" << t_constraint_num/(double)total_success_num << std::endl;
 output << "Success Rate = " << total_success_num << "/" << total_num << " = " << (double)total_success_num/total_num;
-map.ddelete();
     // Solver      solver;
     // HSolutionID        hsolutions;
     // std::vector<CostVector>    hsolution_costs;

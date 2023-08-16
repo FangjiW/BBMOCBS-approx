@@ -225,30 +225,30 @@ void Solver::NonDomJointPath(HighLevelNodePtr node)
 // A*pex version
 void Solver::NonDomVec(std::list<JointPathTuple>& joint_path_vector, MergeStrategy ms, double eps)
 {
-    if (std::get<0>(joint_path_vector.front()).size() == 2) {
-        size_t g_min = UINT64_MAX;
-        for(auto iter = joint_path_vector.begin(); iter != joint_path_vector.end(); ) {
-            if (std::get<0>(*iter).at(1) < g_min) {
-                g_min = std::get<0>(*iter).at(1);
-                bool is_merge = false;
-                for (auto iter1 = joint_path_vector.begin(); iter1 != iter; iter1++) {
-                    if (HighLevelMerge(*iter1, *iter, ms, eps)) {
-                        // std::cout << "you are there" << std::get<0>(*iter).size();
-                        // getchar();
-                        iter = joint_path_vector.erase(std::next(iter1), std::next(iter));
-                        is_merge = true;
-                        break;
+    if(ms != LEAST_CONFLICT){
+        if (std::get<0>(joint_path_vector.front()).size() == 2) {
+            size_t g_min = UINT64_MAX;
+            for(auto iter = joint_path_vector.begin(); iter != joint_path_vector.end(); ) {
+                if (std::get<0>(*iter).at(1) < g_min) {
+                    g_min = std::get<0>(*iter).at(1);
+                    bool is_merge = false;
+                    for (auto iter1 = joint_path_vector.begin(); iter1 != iter; iter1++) {
+                        if (HighLevelMerge(*iter1, *iter, ms, eps)) {
+                            // std::cout << "you are there" << std::get<0>(*iter).size();
+                            // getchar();
+                            iter = joint_path_vector.erase(std::next(iter1), std::next(iter));
+                            is_merge = true;
+                            break;
+                        }
                     }
+                    if (!is_merge) {
+                        iter ++;
+                    }
+                }else{
+                    iter = joint_path_vector.erase(iter);
                 }
-                if (!is_merge) {
-                    iter ++;
-                }
-            }else{
-                iter = joint_path_vector.erase(iter);
             }
-        }
-    }else if(std::get<0>(joint_path_vector.front()).size() == 3){
-        if(ms != LEAST_CONFLICT){
+        }else if(std::get<0>(joint_path_vector.front()).size() == 3){
         // dominance check
             std::set<CostVector, Less_Than_>  domination_set;
             for(auto iter = joint_path_vector.begin(); iter != joint_path_vector.end(); ){
@@ -290,23 +290,23 @@ void Solver::NonDomVec(std::list<JointPathTuple>& joint_path_vector, MergeStrate
                 }
             }
         }else{
-            for(auto iter = joint_path_vector.begin(); iter != joint_path_vector.end(); ){
-                bool is_merge = false;
-                for (auto iter1 = joint_path_vector.begin(); iter1 != iter; iter1++) {
-                    // remark: even if merge happens, the RB-tree doesn't need changing
-                    if(HighLevelMerge(*iter1, *iter, ms, eps)){  
-                        iter = joint_path_vector.erase(iter);
-                        is_merge = true;
-                        break;
-                    }
-                }
-                if (!is_merge) {
-                    iter ++;
+            std::cout << std::endl << "(A*pex) ERROR: non-LEAST_CONFLICT strategy only for g size = 2 or 3" << std::endl;
+        }
+    }else{
+        for(auto iter = joint_path_vector.begin(); iter != joint_path_vector.end(); ){
+            bool is_merge = false;
+            for (auto iter1 = joint_path_vector.begin(); iter1 != iter; iter1++) {
+                // remark: even if merge happens, the RB-tree doesn't need changing
+                if(HighLevelMerge(*iter1, *iter, ms, eps)){  
+                    iter = joint_path_vector.erase(iter);
+                    is_merge = true;
+                    break;
                 }
             }
+            if (!is_merge) {
+                iter ++;
+            }
         }
-	}else{
-        std::cout << std::endl << "(A*pex) ERROR: only g size = 2 or 3" << std::endl;
     }
 }
 
@@ -536,6 +536,7 @@ std::tuple<double, double, double, int, int> Solver::search(size_t graph_size, s
         std::vector<std::pair<size_t, size_t>> start_end, MergeStrategy& ms, LoggerPtr& logger, 
         HSolutionID& hsolution_ids, std::vector<CostVector>& hsolution_costs, std::ofstream& Output)
 {
+    std::vector<CostVector> hsolution_apex_costs;
     bool is_success = true;
     auto start_time = std::clock();
 
@@ -585,7 +586,7 @@ std::tuple<double, double, double, int, int> Solver::search(size_t graph_size, s
         NonDomJointPath(root_node);
     }
     auto tt2 = std::chrono::high_resolution_clock::now(); // for timing.
-    auto duration_tt = std::chrono::duration_cast<std::chrono::microseconds>(tt1 - tt2);
+    auto duration_tt = std::chrono::duration_cast<std::chrono::microseconds>(tt2 - tt1);
     NonDomTime += ((double)duration_tt.count())/1000000.0;
 
     root_node->rep_id_list = root_node->joint_path_list.front().second;
@@ -647,6 +648,7 @@ std::tuple<int, int, CostVector, size_t> cft;
             }
             hsolution_ids.push_back(new_hsolution);
             hsolution_costs.push_back(new_cost);
+            hsolution_apex_costs.push_back(node->rep_apex_cost);
 
             node->joint_path_list.pop_front();
             if(!node->joint_path_list.empty()){
@@ -749,6 +751,7 @@ std::tuple<int, int, CostVector, size_t> cft;
             }
             hsolution_ids.push_back(new_hsolution);
             hsolution_costs.push_back(new_cost);
+            hsolution_apex_costs.push_back(node->rep_apex_cost);
             std::cout << "there is a solution" << std::endl;
             extra_solution ++;
         }
@@ -858,21 +861,106 @@ std::tuple<int, int, CostVector, size_t> cft;
             }
         }
     }
-    if(is_success){
-        Output << "SUCCESS" << std::endl << std::endl;
-    }else{
-        Output << "FAIL" << std::endl << std::endl;
+
+//  post process
+    std::sort(hsolution_costs.begin(), hsolution_costs.end(), [](CostVector& a, CostVector& b){
+        for(int i = 0; i < a.size(); i++){
+            if(a.at(i) != b.at(i)){
+                return a.at(i) < b.at(i);
+            }
+        }
+        return true;
+    });
+    std::sort(hsolution_apex_costs.begin(), hsolution_apex_costs.end(), [](CostVector& a, CostVector& b){
+        for(int i = 0; i < a.size(); i++){
+            if(a.at(i) != b.at(i)){
+                return a.at(i) < b.at(i);
+            }
+        }
+        return true;
+    });
+
+    auto solution_costs = hsolution_costs;
+    hsolution_costs.clear();
+    for(auto ele: solution_costs){
+        bool is_dominated = false;
+        for(auto ele1: hsolution_costs){
+            bool is_dominated_by_this_one = true;
+            for(int i = 0; i < ele1.size(); i++){
+                if(ele1.at(i) > ele.at(i)){
+                    is_dominated_by_this_one = false;
+                    break;
+                }
+            }
+            if(is_dominated_by_this_one){
+                is_dominated = true;
+                break;
+            }
+        }
+        if(!is_dominated){
+            hsolution_costs.push_back(ele);
+        }
     }
-    for(size_t num = 0; num < hsolution_ids.size(); num ++){
-        Output << "SOLUTION " << num+1;
-        Output << " COST   " << "{";
+
+    auto solution_apex_costs = hsolution_apex_costs;
+    hsolution_apex_costs.clear();
+    for(auto ele: solution_apex_costs){
+        bool is_dominated = false;
+        for(auto ele1: hsolution_apex_costs){
+            bool is_dominated_by_this_one = true;
+            for(int i = 0; i < ele1.size(); i++){
+                if(ele1.at(i) > ele.at(i)){
+                    is_dominated_by_this_one = false;
+                    break;
+                }
+            }
+            if(is_dominated_by_this_one){
+                is_dominated = true;
+                break;
+            }
+        }
+        if(!is_dominated){
+            hsolution_apex_costs.push_back(ele);
+        }
+    }
+
+    if(is_success){
+        Output << "SUCCESS" << std::endl;
+    }else{
+        Output << "FAIL" << std::endl;
+    }
+    Output << "apex cost: " << std::endl;
+    int i = 0;
+    for(size_t num = 0; num < hsolution_apex_costs.size(); num ++){
+        if(i++ == 7){
+            Output << std::endl;
+            i = 1;
+        }
+        if(vm["dim"].as<int>() == 2){
+            Output << "{" << hsolution_apex_costs.at(num).at(0) << ", " << hsolution_apex_costs.at(num).at(1);
+        }else{
+            Output << "{" << hsolution_apex_costs.at(num).at(0) << ", " << hsolution_apex_costs.at(num).at(1) << ", " << hsolution_apex_costs.at(num).at(2);
+        }
+        Output << "}, ";
+    }
+    Output << std::endl;
+    Output << "real cost: " << std::endl;
+    int j = 0;
+    for(size_t num = 0; num < hsolution_costs.size(); num ++){
+        if(j++ == 7){
+            Output << std::endl;
+            j = 1;
+        }
+        Output << "{";
         if(vm["dim"].as<int>() == 2){
             Output << hsolution_costs.at(num).at(0) << ", " << hsolution_costs.at(num).at(1);
         }else{
-            Output << hsolution_costs.at(num).at(0) << ", " << hsolution_costs.at(num).at(1) << ", " << hsolution_costs.at(num).at(2);
+            Output << "{" << hsolution_costs.at(num).at(0) << ", " << hsolution_costs.at(num).at(1) << ", " << hsolution_costs.at(num).at(2);
         }
-        Output << "}" << std::endl;
+        Output << "}, ";
     }
+    Output << std::endl;
+    Output << "Extra Solution Number = " << extra_solution << std::endl << std::endl;
     // Output << std::endl;
     // Output << "NonDomTime = " << NonDomTime << std::endl;
     // Output << "LowLevelTime = " << LowLevelTime << std::endl;

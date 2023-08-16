@@ -70,14 +70,15 @@ void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs,
 
     auto start_time = std::clock();
 
-    if (num_of_objectives == 2){
-        local_dom_checker = std::make_unique<LocalCheck>(eps_merge, this->adj_matrix.size());
-        solution_dom_checker = std::make_unique<SolutionCheck>(eps_prune);
-    }else{
-        local_dom_checker = std::make_unique<LocalCheckLinear>(eps_merge, this->adj_matrix.size());
-        solution_dom_checker = std::make_unique<SolutionCheckLinear>(eps_prune);
-    }
-
+    // if (num_of_objectives == 2){
+    //     local_dom_checker = std::make_unique<LocalCheck>(eps_merge, this->adj_matrix.size());
+    //     solution_dom_checker = std::make_unique<SolutionCheck>(eps_prune);
+    // }else{
+    //     local_dom_checker = std::make_unique<LocalCheckLinear>(eps_merge, this->adj_matrix.size());
+    //     solution_dom_checker = std::make_unique<SolutionCheckLinear>(eps_prune);
+    // }
+    local_dom_checker = std::make_unique<LocalCheckLinear>(eps_merge, this->adj_matrix.size());
+    solution_dom_checker = std::make_unique<SolutionCheckLinear>(eps_prune);
 
     this->start_logging(source, target);
 

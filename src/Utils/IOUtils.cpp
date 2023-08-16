@@ -297,7 +297,7 @@ void PreProcessor::generate_cost(Map map, std::vector<Edge>& edges, int dim)
     Map cost_map3(map.width, map.height);
 
     std::default_random_engine generator(seed);
-    std::uniform_int_distribution<int> distribution(1, 2);
+    std::uniform_int_distribution<int> distribution(1, 5);
 
     // Read the map data from the file and store it in the Map object
     for(int x = 0; x < map.height; x ++) {
