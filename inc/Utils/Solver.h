@@ -13,9 +13,9 @@ public:
     Solver(){};
 //  DomPrune
     //  for joint_path_list
-    bool DomPrune(std::vector<CostVector>& solution_costs, std::list<JointPathPair>& joint_path_list, std::vector<CostSet>& indiv_real_costs, double eps, int& DomPruneNum);
+    bool DomPrune(std::vector<CostVector>& solution_costs, std::list<JointPathPair>& joint_path_list, double eps, int& DomPruneNum);
     //  for single joint path
-    bool DomPrune(std::vector<CostVector>& solution_costs, JointPathPair& joint_path, double eps);
+    bool DomPrune(std::vector<CostVector>& solution_costs, CostVector& real_cost, double eps);
 
 //  add constraint
     //  vertex constraint
@@ -36,8 +36,6 @@ public:
     void calculateCAT(HighLevelNodePtr, CAT& cat, int agent_id);
 
     std::tuple<double, double, double, int, int> search(size_t graph_size, std::vector<Edge>& edges, boost::program_options::variables_map& vm, 
-        std::vector<std::pair<size_t, size_t>> start_end, MergeStrategy& ms, LoggerPtr& logger, 
+        std::vector<std::pair<size_t, size_t>>& start_end, MergeStrategy& ms, LoggerPtr& logger, 
         HSolutionID& hsolution_ids, std::vector<CostVector>& hsolution_costs, std::ofstream& output_file);
-
-    
 };

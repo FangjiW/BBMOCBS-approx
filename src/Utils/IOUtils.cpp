@@ -189,9 +189,7 @@ void PreProcessor::read_map(std::string map_file_name, Map& map, std::unordered_
         std::cout << "Error: Unable to open map file." << std::endl;
         exit(1);
     }
-
-
-
+    
     // Read map information
     std::string temp;
     int height, width;
@@ -206,7 +204,7 @@ void PreProcessor::read_map(std::string map_file_name, Map& map, std::unordered_
     }
 
     // Create a Map object to store the map data
-    map = Map(width, height);
+    map.setSize(width, height);
 
     // Read the map data from the file and store it in the Map object
     for (int x = 0; x < height; ++x) {
@@ -234,7 +232,7 @@ void PreProcessor::read_map(std::string map_file_name, Map& map, std::unordered_
     Input.close();
 }
 
-void PreProcessor::read_config(std::string config_file, Map map, int agent_num, std::vector<std::pair<size_t, size_t>>&  start_end)
+void PreProcessor::read_config(std::string config_file, Map& map, int agent_num, std::vector<std::pair<size_t, size_t>>&  start_end)
 {
     start_end.clear();
     // std::cout << config_file[config_file.length()-1];
@@ -288,7 +286,7 @@ void PreProcessor::read_config(std::string config_file, Map map, int agent_num, 
 //     }
 // }
 
-void PreProcessor::generate_cost(Map map, std::vector<Edge>& edges, int dim)
+void PreProcessor::generate_cost(Map& map, std::vector<Edge>& edges, int dim)
 {
     edges.clear();
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
@@ -343,8 +341,9 @@ void PreProcessor::generate_cost(Map map, std::vector<Edge>& edges, int dim)
     }
 }
 
-void PreProcessor::read_cost(std::string cost_file, Map map, std::vector<Edge>& edges)
+void PreProcessor::read_cost(std::string cost_file, Map& map, std::vector<Edge>& edges, int dim)
 {
+    edges.clear();
     std::ifstream Input(cost_file);
     if(!Input.is_open()){
         std::cout << "Error: Unable to open cost file." << std::endl;
@@ -352,6 +351,7 @@ void PreProcessor::read_cost(std::string cost_file, Map map, std::vector<Edge>& 
     }
     Map cost_map1(map.width, map.height);
     Map cost_map2(map.width, map.height);
+    Map cost_map3(map.width, map.height);
 
     // Read the map data from the file and store it in the Map object
     for(int x = 0; x < map.height; x ++) {
@@ -369,33 +369,72 @@ void PreProcessor::read_cost(std::string cost_file, Map map, std::vector<Edge>& 
             cost_map2.setVal(y, x, cost2);
         }
     }
-
-    for(int x = 0; x < map.height; x ++) {
-        for(int y = 0; y < map.width; y ++){
-            if(map.getVal(x, y) == -1){
-                continue;
-            }
-            edges.push_back(Edge(map.getID(x, y), map.getID(x, y), std::vector<size_t>(
-                    {cost_map1.getVal(x, y), cost_map2.getVal(x, y)})));        //  add remain place action
-
-            if(y < map.width-1 && map.getVal(x, y+1) == 0){
-                edges.push_back(Edge(map.getID(x, y+1), map.getID(x, y), std::vector<size_t>(
-                    {cost_map1.getVal(x, y), cost_map2.getVal(x, y)})));
-            }
-            if(y > 0 && map.getVal(x, y-1) == 0){
-                edges.push_back(Edge(map.getID(x, y-1), map.getID(x, y), std::vector<size_t>(
-                    {cost_map1.getVal(x, y), cost_map2.getVal(x, y)})));
-            }
-            if(x < map.height-1 && map.getVal(x+1, y) == 0){
-                edges.push_back(Edge(map.getID(x+1, y), map.getID(x, y), std::vector<size_t>(
-                    {cost_map1.getVal(x, y), cost_map2.getVal(x, y)})));
-            }
-            if(x > 0 && map.getVal(x-1, y) == 0){
-                edges.push_back(Edge(map.getID(x-1, y), map.getID(x, y), std::vector<size_t>(
-                    {cost_map1.getVal(x, y), cost_map2.getVal(x, y)})));
+    if(dim == 3){
+        for(int x = 0; x < map.height; x ++) {
+            for(int y = 0; y < map.width; y ++){
+                int cost3;
+                Input >> cost3;
+                cost_map3.setVal(y, x, cost3);
             }
         }
     }
+    if(dim == 2){
+        for(int x = 0; x < map.height; x ++) {
+            for(int y = 0; y < map.width; y ++){
+                if(map.getVal(x, y) == -1){
+                    continue;
+                }
+                edges.push_back(Edge(map.getID(x, y), map.getID(x, y), std::vector<size_t>(
+                        {cost_map1.getVal(x, y), cost_map2.getVal(x, y)})));        //  add remain place action
 
+                if(y < map.width-1 && map.getVal(x, y+1) == 0){
+                    edges.push_back(Edge(map.getID(x, y+1), map.getID(x, y), std::vector<size_t>(
+                        {cost_map1.getVal(x, y), cost_map2.getVal(x, y)})));
+                }
+                if(y > 0 && map.getVal(x, y-1) == 0){
+                    edges.push_back(Edge(map.getID(x, y-1), map.getID(x, y), std::vector<size_t>(
+                        {cost_map1.getVal(x, y), cost_map2.getVal(x, y)})));
+                }
+                if(x < map.height-1 && map.getVal(x+1, y) == 0){
+                    edges.push_back(Edge(map.getID(x+1, y), map.getID(x, y), std::vector<size_t>(
+                        {cost_map1.getVal(x, y), cost_map2.getVal(x, y)})));
+                }
+                if(x > 0 && map.getVal(x-1, y) == 0){
+                    edges.push_back(Edge(map.getID(x-1, y), map.getID(x, y), std::vector<size_t>(
+                        {cost_map1.getVal(x, y), cost_map2.getVal(x, y)})));
+                }
+            }
+        }
+    }else if(dim == 3){
+        for(int x = 0; x < map.height; x ++) {
+            for(int y = 0; y < map.width; y ++){
+                if(map.getVal(x, y) == -1){
+                    continue;
+                }
+                edges.push_back(Edge(map.getID(x, y), map.getID(x, y), std::vector<size_t>(
+                        {cost_map1.getVal(x, y), cost_map2.getVal(x, y), cost_map3.getVal(x, y)}))); //  add remain place action
+
+                if(y < map.width-1 && map.getVal(x, y+1) == 0){
+                    edges.push_back(Edge(map.getID(x, y+1), map.getID(x, y), std::vector<size_t>(
+                        {cost_map1.getVal(x, y), cost_map2.getVal(x, y), cost_map3.getVal(x, y)})));
+                }
+                if(y > 0 && map.getVal(x, y-1) == 0){
+                    edges.push_back(Edge(map.getID(x, y-1), map.getID(x, y), std::vector<size_t>(
+                        {cost_map1.getVal(x, y), cost_map2.getVal(x, y), cost_map3.getVal(x, y)})));
+                }
+                if(x < map.height-1 && map.getVal(x+1, y) == 0){
+                    edges.push_back(Edge(map.getID(x+1, y), map.getID(x, y), std::vector<size_t>(
+                        {cost_map1.getVal(x, y), cost_map2.getVal(x, y), cost_map3.getVal(x, y)})));
+                }
+                if(x > 0 && map.getVal(x-1, y) == 0){
+                    edges.push_back(Edge(map.getID(x-1, y), map.getID(x, y), std::vector<size_t>(
+                        {cost_map1.getVal(x, y), cost_map2.getVal(x, y), cost_map3.getVal(x, y)})));
+                }
+            }
+        }
+    }else{
+        std::cout << "(read_cost) ERROR: noly for dim = 2 or 3";
+        exit(1);
+    }
     Input.close();
 }

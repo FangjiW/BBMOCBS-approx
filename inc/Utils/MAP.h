@@ -8,7 +8,18 @@ public:
 
     Map(){};
 
-    Map(int width, int height) : height(height), width(width), graph_size(0){
+    Map(int width, int height) : height(height), width(width){
+        map_data = new size_t*[width];
+        ids = new size_t*[width];
+        for(int i = 0; i < width; i ++){
+            map_data[i] = new size_t[height];
+            ids[i] = new size_t[height];
+        }
+    }
+
+    void setSize(int _width, int _height){
+        height = _height;
+        width = _width;
         map_data = new size_t*[width];
         ids = new size_t*[width];
         for(int i = 0; i < width; i ++){
@@ -33,13 +44,13 @@ public:
         return ids[x][y];
     }
 
-    void ddelete(){
-        for (int i = 0; i < width; i++) {
+    ~Map(){
+       for (int i = 0; i < width; i++) {
             delete[] map_data[i];
             delete[] ids[i];
         }
         delete[] map_data;
-        delete[] ids;
+        delete[] ids; 
     }
 
 private:

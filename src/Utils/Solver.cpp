@@ -33,7 +33,7 @@ struct Less_Than_
         }
         return true;
     }
-} less_than_;
+};
 
 void Solver::add_constraint(std::vector<VertexConstraint>& vertex_constraints, size_t agent_id, size_t node_id, size_t time)
 {
@@ -45,16 +45,11 @@ void Solver::add_constraint(std::vector<EdgeConstraint>& edge_constraints, size_
     edge_constraints.at(agent_id)[source][time].push_back(target);
 }
 
-bool Solver::DomPrune(std::vector<CostVector>& solution_costs, std::list<JointPathPair>& joint_path_list, std::vector<CostSet>& indiv_real_costs, double eps, int& DomPruneNum)
+bool Solver::DomPrune(std::vector<CostVector>& solution_costs, std::list<JointPathPair>& joint_path_list, double eps, int& DomPruneNum)
 {
     int agent_num = joint_path_list.front().second.size();
     bool is_prune = false;
-    for (auto iter = joint_path_list.begin(); iter != joint_path_list.end(); ) {
-        CostVector real_cost(joint_path_list.front().first.size(), 0);
-        for(int i = 0; i < agent_num; i ++){
-            add_cost(real_cost, indiv_real_costs.at(i)[iter->second.at(i)]);
-        }
-        
+    for (auto iter = joint_path_list.begin(); iter != joint_path_list.end(); ) {        
         bool is_dominated = false;
         for (auto solution_cost : solution_costs) {
             // std::cout << solution_cost.at(0) << ", " << solution_cost.at(1) << ", " << solution_cost.at(2) << std::endl;
@@ -62,7 +57,7 @@ bool Solver::DomPrune(std::vector<CostVector>& solution_costs, std::list<JointPa
             // getchar();
             bool is_dominated_by_this_one = true;
             for (int i = 0; i < solution_cost.size(); i++) {
-                if (real_cost.at(i) * (1 + eps) < solution_cost.at(i)) {
+                if (iter->first.at(i) * (1 + eps) < solution_cost.at(i)) {
                     is_dominated_by_this_one = false;
                     break;
                 }
@@ -83,12 +78,12 @@ bool Solver::DomPrune(std::vector<CostVector>& solution_costs, std::list<JointPa
     return is_prune;
 }
 
-bool Solver::DomPrune(std::vector<CostVector>& solution_costs, JointPathPair& joint_path, double eps)
+bool Solver::DomPrune(std::vector<CostVector>& solution_costs, CostVector& real_cost, double eps)
 {
     for (auto& solution_cost : solution_costs) {
         bool is_dominated = true;
         for (int i = 0; i < solution_cost.size(); i++) {
-            if (joint_path.first.at(i) * (1 + eps) < solution_cost.at(i)) {
+            if (real_cost.at(i) * (1 + eps) < solution_cost.at(i)) {
                 is_dominated = false;
                 break;
             }
@@ -533,7 +528,7 @@ void Solver::calculateCAT(HighLevelNodePtr node, CAT& cat, int agent_id)
 }
 
 std::tuple<double, double, double, int, int> Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::program_options::variables_map& vm, 
-        std::vector<std::pair<size_t, size_t>> start_end, MergeStrategy& ms, LoggerPtr& logger, 
+        std::vector<std::pair<size_t, size_t>>& start_end, MergeStrategy& ms, LoggerPtr& logger, 
         HSolutionID& hsolution_ids, std::vector<CostVector>& hsolution_costs, std::ofstream& Output)
 {
     std::vector<CostVector> hsolution_apex_costs;
@@ -594,7 +589,7 @@ std::tuple<double, double, double, int, int> Solver::search(size_t graph_size, s
     open_list.insert(root_node);
 
 
-std::tuple<int, int, CostVector, size_t> cft;
+    std::tuple<int, int, CostVector, size_t> cft;
 //  main loop    
     size_t constraint_num = 0;
     while(!open_list.empty())
@@ -604,159 +599,43 @@ std::tuple<int, int, CostVector, size_t> cft;
             break;
         }
         auto node = open_list.pop();
-    
 
-        // Dom Prune 
-        if(DomPrune(hsolution_costs, node->joint_path_list, node->indiv_real_costs, Heps_nonconflict_prune, DomPruneNum)){
-            if(node->joint_path_list.empty()){
-                continue;
+        if(Heps_merge > 0.001 || Heps_conflict_prune > 0.001 || Leps_merge > 0.001 || Leps_prune > 0.001){
+        //  exhaust remaing joint path in high-level node, if no confliction, then add to solution set
+        //  remark: this cannot ensure non-dominated set
+            for(auto iter = node->joint_path_list.begin(); iter != node->joint_path_list.end(); iter++){
+                CostVector  real_cost(iter->first.size(), 0);
+                for(int i = 0; i < agent_num; i++){
+                    add_cost(real_cost, node->indiv_real_costs.at(i)[iter->second.at(i)]);
+                }
+                if(DomPrune(hsolution_costs, real_cost, Heps_nonconflict_prune) 
+                || conflict_checker.is_conflict(*iter, node->indiv_paths_list, agent_num)){
+                    continue;
+                }
+                std::vector<std::vector<size_t>> new_hsolution;
+                CostVector  new_cost(node->rep_apex_cost.size(), 0);
+                for(int i = 0; i < agent_num; i ++){
+                    new_hsolution.push_back(node->indiv_paths_list.at(i)[iter->second.at(i)]);
+                    add_cost(new_cost, node->indiv_real_costs.at(i)[iter->second.at(i)]);
+                }
+                hsolution_ids.push_back(new_hsolution);
+                hsolution_costs.push_back(new_cost);
+                hsolution_apex_costs.push_back(node->rep_apex_cost);
+                std::cout << "there is a solution" << std::endl;
+                extra_solution ++;
             }
-            node->rep_id_list = node->joint_path_list.front().second;
-            node->rep_apex_cost = node->joint_path_list.front().first;
-            open_list.insert(node);
+        }
+
+        //  Dom Prune
+        DomPrune(hsolution_costs, node->joint_path_list, Heps_conflict_prune, DomPruneNum);
+        if(node->joint_path_list.empty()){
             continue;
         }
+        node->rep_id_list = node->joint_path_list.front().second;
+        node->rep_apex_cost = node->joint_path_list.front().first;
         cft = conflict_checker.is_conflict(node);
 
-        //  Conflict check
-        if(!std::get<2>(cft).empty()){
-            // non-conflict, if eps-dominated, then prune
-            if(DomPrune(hsolution_costs, node->joint_path_list.front(), Heps_conflict_prune)){
-                DomPruneNum ++;
-                node->joint_path_list.pop_front();
-                if(node->joint_path_list.empty()){
-                    continue;
-                }
-                DomPrune(hsolution_costs, node->joint_path_list, node->indiv_real_costs, Heps_nonconflict_prune, DomPruneNum);
-                if(node->joint_path_list.empty()){
-                    continue;
-                }
-                node->rep_id_list = node->joint_path_list.front().second;
-                node->rep_apex_cost = node->joint_path_list.front().first;
-                open_list.insert(node);
-                continue;
-            }
-        }
-
-        
-        if(std::get<2>(cft).empty()){   // generate solution
-            std::vector<std::vector<size_t>> new_hsolution;
-            CostVector  new_cost(node->rep_apex_cost.size(), 0);
-            for(int i = 0; i < agent_num; i ++){
-                new_hsolution.push_back(node->indiv_paths_list.at(i)[node->rep_id_list.at(i)]);
-                add_cost(new_cost, node->indiv_real_costs.at(i)[node->rep_id_list.at(i)]);
-            }
-            hsolution_ids.push_back(new_hsolution);
-            hsolution_costs.push_back(new_cost);
-            hsolution_apex_costs.push_back(node->rep_apex_cost);
-
-            node->joint_path_list.pop_front();
-            if(!node->joint_path_list.empty()){
-                node->rep_id_list = node->joint_path_list.front().second;
-                node->rep_apex_cost = node->joint_path_list.front().first;
-                open_list.insert(node);
-                std::cout << "*******one solution*******" << std::endl;
-            }
-            continue;
-        }
-
-    // //  print confliction information
-    // std::cout << "one confict path" << std::endl;
-    // std::cout << node->rep_apex_cost.at(0) << ", " << node->rep_apex_cost.at(1) << ", " << node->rep_apex_cost.at(2) << std::endl;
-    // std::cout << "solutions: " << std::endl;
-    // for(auto iter = hsolution_costs.begin(); iter != hsolution_costs.end(); iter++){
-    //     std::cout << iter->at(0) << ", " << iter->at(1) << ", " << iter->at(2);
-    // }
-    // int _id1 = std::get<0>(cft);
-    // int _id2 = std::get<1>(cft);
-    // int id1 = _id1 >= 0 ? _id1 : -_id1-1;
-    // int id2 = _id2 >= 0 ? _id2 : -_id2-1;
-    // if(std::get<2>(cft).size() == 2){
-    //     std::cout << std::endl << "agent1: " << id1 << "  agent2: " << id2 << "  state: {" 
-    //         << id2coord[std::get<2>(cft).front()].at(0) << ", " << id2coord[std::get<2>(cft).front()].at(1)
-    //         << "}, {" << id2coord[std::get<2>(cft).at(1)].at(0) << ", " << id2coord[std::get<2>(cft).at(1)].at(1)
-    //         << "}    t:" << std::get<3>(cft) << std::endl << "path1: ";
-    // }else{
-    //     std::cout << std::endl << "agent1: " << id1 << "  agent2: " << id2 << "  state: {" 
-    //         << id2coord[std::get<2>(cft).front()].at(0) << ", " << id2coord[std::get<2>(cft).front()].at(1)
-    //         << "}   t:" << std::get<3>(cft) << std::endl << "path1: ";
-    // }
-    // for(size_t ii : node->indiv_paths_list.at(id1)[node->rep_id_list.at(id1)]){
-    //     std::cout << "{" << id2coord[ii].at(0) << ", " << id2coord[ii].at(1) << "}, ";
-    // }
-    // std::cout << std::endl << "path2: ";
-    // for(size_t ii : node->indiv_paths_list.at(id2)[node->rep_id_list.at(id2)]){
-    //     std::cout << "{" << id2coord[ii].at(0) << ", " << id2coord[ii].at(1) << "}, ";
-    // }
-    
-    // std::cout << std::endl << std::endl;
-    // std::cout << "vertex constraint: ";
-    // int nn = 0;
-    // for(auto ele : node->vertex_constraints){
-    //     bool ifprint = false;
-    //     for(auto ele1 : ele){
-    //         if(ele1.second.empty()){
-    //             continue;
-    //         }
-    //         if(!ifprint){
-    //             std::cout << std::endl  << "agent: " << nn << "  ";
-    //             std::cout << std::endl;
-    //             ifprint = true;
-    //         }
-    //         for(auto ele2 : ele1.second){
-    //             std::cout << "{(" << id2coord[ele2].at(0) << ", " << id2coord[ele2].at(1) << "), " << ele1.first << "}, ";
-    //         }
-    //         std::cout << std::endl;
-    //     }
-    //     nn ++;
-    // }
-    // std::cout << std::endl;
-    // int mm = 0;
-    // std::cout << "edge constraints: ";
-    // for(auto ele : node->edge_constraints){
-    //     bool ifprint = false;
-    //     for(auto ele1 : ele){ // ele1.first is source, second is (t, target)
-    //         if(!ifprint){
-    //             std::cout << std::endl  << "agent: " << mm << "  ";
-    //             std::cout << std::endl;
-    //             ifprint = true;
-    //         }
-    //         for(auto ele2 : ele1.second){
-    //             for(auto ele3 : ele2.second){
-    //             std::cout << "{(" << id2coord[ele1.first].at(0) << ", " << id2coord[ele1.first].at(1) << "), ("
-    //             << id2coord[ele3].at(0) << ", " << id2coord[ele3].at(1) << "), " << ele2.first << "}, ";
-    //             }
-    //         }
-    //         std::cout << std::endl;
-    //     }
-    //     mm ++;
-    // }
-    // getchar();
-
-
-
-    if(Heps_merge > 0.001 || Heps_conflict_prune > 0.001 || Leps_merge > 0.001 || Leps_prune > 0.001){
-    //  exhaust remaing joint path in high-level node, if no confliction, then add to solution set
-    //  remark: this cannot ensure non-dominated set
-        for(auto iter = std::next(node->joint_path_list.begin()); iter != node->joint_path_list.end(); iter++){
-            if(DomPrune(hsolution_costs, *iter, Heps_nonconflict_prune) 
-            || conflict_checker.is_conflict(*iter, node->indiv_paths_list, agent_num)){
-                continue;
-            }
-            std::vector<std::vector<size_t>> new_hsolution;
-            CostVector  new_cost(node->rep_apex_cost.size(), 0);
-            for(int i = 0; i < agent_num; i ++){
-                new_hsolution.push_back(node->indiv_paths_list.at(i)[iter->second.at(i)]);
-                add_cost(new_cost, node->indiv_real_costs.at(i)[iter->second.at(i)]);
-            }
-            hsolution_ids.push_back(new_hsolution);
-            hsolution_costs.push_back(new_cost);
-            hsolution_apex_costs.push_back(node->rep_apex_cost);
-            std::cout << "there is a solution" << std::endl;
-            extra_solution ++;
-        }
-    }
-    
+        assert(!std::get<2>(cft).empty());
 
         auto _t1 = std::chrono::high_resolution_clock::now();
         constraint_num ++;
@@ -861,24 +740,10 @@ std::tuple<int, int, CostVector, size_t> cft;
             }
         }
     }
-
+    int solution_num = hsolution_costs.size();
 //  post process
-    std::sort(hsolution_costs.begin(), hsolution_costs.end(), [](CostVector& a, CostVector& b){
-        for(int i = 0; i < a.size(); i++){
-            if(a.at(i) != b.at(i)){
-                return a.at(i) < b.at(i);
-            }
-        }
-        return true;
-    });
-    std::sort(hsolution_apex_costs.begin(), hsolution_apex_costs.end(), [](CostVector& a, CostVector& b){
-        for(int i = 0; i < a.size(); i++){
-            if(a.at(i) != b.at(i)){
-                return a.at(i) < b.at(i);
-            }
-        }
-        return true;
-    });
+    std::sort(hsolution_costs.begin(), hsolution_costs.end());
+    std::sort(hsolution_apex_costs.begin(), hsolution_apex_costs.end());
 
     auto solution_costs = hsolution_costs;
     hsolution_costs.clear();
@@ -960,7 +825,7 @@ std::tuple<int, int, CostVector, size_t> cft;
         Output << "}, ";
     }
     Output << std::endl;
-    Output << "Extra Solution Number = " << extra_solution << std::endl << std::endl;
+    Output << "Extra Solution Number = " << extra_solution << "/" << solution_num << std::endl << std::endl;
     // Output << std::endl;
     // Output << "NonDomTime = " << NonDomTime << std::endl;
     // Output << "LowLevelTime = " << LowLevelTime << std::endl;
@@ -974,7 +839,78 @@ std::tuple<int, int, CostVector, size_t> cft;
     // Output << std::endl << std::endl;
     return std::tuple<double, double, double, int, int>(NonDomTime, LowLevelTime, TotalTime, DomPruneNum, constraint_num);
 }
-
+// //  print confliction information
+    // std::cout << "one confict path" << std::endl;
+    // std::cout << node->rep_apex_cost.at(0) << ", " << node->rep_apex_cost.at(1) << ", " << node->rep_apex_cost.at(2) << std::endl;
+    // std::cout << "solutions: " << std::endl;
+    // for(auto iter = hsolution_costs.begin(); iter != hsolution_costs.end(); iter++){
+    //     std::cout << iter->at(0) << ", " << iter->at(1) << ", " << iter->at(2);
+    // }
+    // int _id1 = std::get<0>(cft);
+    // int _id2 = std::get<1>(cft);
+    // int id1 = _id1 >= 0 ? _id1 : -_id1-1;
+    // int id2 = _id2 >= 0 ? _id2 : -_id2-1;
+    // if(std::get<2>(cft).size() == 2){
+    //     std::cout << std::endl << "agent1: " << id1 << "  agent2: " << id2 << "  state: {" 
+    //         << id2coord[std::get<2>(cft).front()].at(0) << ", " << id2coord[std::get<2>(cft).front()].at(1)
+    //         << "}, {" << id2coord[std::get<2>(cft).at(1)].at(0) << ", " << id2coord[std::get<2>(cft).at(1)].at(1)
+    //         << "}    t:" << std::get<3>(cft) << std::endl << "path1: ";
+    // }else{
+    //     std::cout << std::endl << "agent1: " << id1 << "  agent2: " << id2 << "  state: {" 
+    //         << id2coord[std::get<2>(cft).front()].at(0) << ", " << id2coord[std::get<2>(cft).front()].at(1)
+    //         << "}   t:" << std::get<3>(cft) << std::endl << "path1: ";
+    // }
+    // for(size_t ii : node->indiv_paths_list.at(id1)[node->rep_id_list.at(id1)]){
+    //     std::cout << "{" << id2coord[ii].at(0) << ", " << id2coord[ii].at(1) << "}, ";
+    // }
+    // std::cout << std::endl << "path2: ";
+    // for(size_t ii : node->indiv_paths_list.at(id2)[node->rep_id_list.at(id2)]){
+    //     std::cout << "{" << id2coord[ii].at(0) << ", " << id2coord[ii].at(1) << "}, ";
+    // }
+    
+    // std::cout << std::endl << std::endl;
+    // std::cout << "vertex constraint: ";
+    // int nn = 0;
+    // for(auto ele : node->vertex_constraints){
+    //     bool ifprint = false;
+    //     for(auto ele1 : ele){
+    //         if(ele1.second.empty()){
+    //             continue;
+    //         }
+    //         if(!ifprint){
+    //             std::cout << std::endl  << "agent: " << nn << "  ";
+    //             std::cout << std::endl;
+    //             ifprint = true;
+    //         }
+    //         for(auto ele2 : ele1.second){
+    //             std::cout << "{(" << id2coord[ele2].at(0) << ", " << id2coord[ele2].at(1) << "), " << ele1.first << "}, ";
+    //         }
+    //         std::cout << std::endl;
+    //     }
+    //     nn ++;
+    // }
+    // std::cout << std::endl;
+    // int mm = 0;
+    // std::cout << "edge constraints: ";
+    // for(auto ele : node->edge_constraints){
+    //     bool ifprint = false;
+    //     for(auto ele1 : ele){ // ele1.first is source, second is (t, target)
+    //         if(!ifprint){
+    //             std::cout << std::endl  << "agent: " << mm << "  ";
+    //             std::cout << std::endl;
+    //             ifprint = true;
+    //         }
+    //         for(auto ele2 : ele1.second){
+    //             for(auto ele3 : ele2.second){
+    //             std::cout << "{(" << id2coord[ele1.first].at(0) << ", " << id2coord[ele1.first].at(1) << "), ("
+    //             << id2coord[ele3].at(0) << ", " << id2coord[ele3].at(1) << "), " << ele2.first << "}, ";
+    //             }
+    //         }
+    //         std::cout << std::endl;
+    //     }
+    //     mm ++;
+    // }
+    // getchar();    
 
 
 
