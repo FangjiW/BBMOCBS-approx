@@ -730,6 +730,9 @@ std::tuple<double, double, double, int, int> Solver::search(size_t graph_size, s
                 }else{
                     NonDomJointPath(new_node);
                 }
+                if(new_node->joint_path_list.empty()){
+                    continue;
+                }
                 auto __t2 = std::chrono::high_resolution_clock::now(); // for timing.
                 auto duration2_ = std::chrono::duration_cast<std::chrono::microseconds>(__t2 - __t1);
                 NonDomTime += ((double)duration2_.count()) / 1000000.0;
