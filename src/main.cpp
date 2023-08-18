@@ -67,10 +67,8 @@ if(vm["algorithm"].as<std::string>() == "BOA" && vm["dim"].as<int>() > 2){
     std::cout << std::endl << "BOA* only works for cost dimension = 2";
     exit(1);
 }
-MergeStrategy ms = DEFAULT_MERGE_STRATEGY;
-if(vm["dim"].as<int>() == 3){
-    ms = MergeStrategy::RANDOM;
-}
+// MergeStrategy ms = DEFAULT_MERGE_STRATEGY;
+auto ms = MergeStrategy::RANDOM;
 
 
 /*************************  Build  Map  ****************************/

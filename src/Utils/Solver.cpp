@@ -157,6 +157,23 @@ void Solver::NonDomJointPath(HighLevelNodePtr node, MergeStrategy ms, double eps
                 iter = joint_path_vector.erase(iter);
                 joint_path_vector.push_front(temp);
                 min_conflict_num = std::get<3>(temp);
+            }else if(std::get<3>(*iter) == min_conflict_num){
+                bool if_change = false;
+                for(int i = 0; i < std::get<0>(*iter).size(); i++){
+                    if(std::get<0>(*iter).at(i) < std::get<0>(joint_path_vector.front()).at(i)){
+                        if_change = true;
+                        break;
+                    }else if(std::get<0>(*iter).at(i) > std::get<0>(joint_path_vector.front()).at(i)){
+                        break;
+                    }
+                }
+                if(if_change){
+                    auto temp = *iter;
+                    iter = joint_path_vector.erase(iter);
+                    joint_path_vector.push_front(temp);
+                }else{
+                    iter ++;
+                }
             }else{
                 iter ++;
             }
@@ -546,9 +563,6 @@ std::tuple<double, double, double, int, int> Solver::search(size_t graph_size, s
     std::string algorithm = vm["algorithm"].as<std::string>();
     std::string output = vm["output"].as<std::string>();
     MergeStrategy l_ms = MergeStrategy::LEAST_CONFLICT;
-    if(vm["dim"].as<int>() == 2){
-        l_ms = SMALLER_G2;
-    }
     
     double Heps_merge = Heps_merge_max;
     double NonDomTime = 0, LowLevelTime = 0, DomPruneTime = 0, ConflictionTime = 0;

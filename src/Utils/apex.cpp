@@ -174,12 +174,10 @@ bool ApexPathPair::update_nodes_by_merge_if_bounded(const ApexPathPairPtr &other
         return false;
       }
     }else{
-      if (is_bounded(new_apex, other->path_node, eps)){
-        new_path_node = other->path_node;
-      }else if (is_bounded(new_apex, this->path_node, eps)){
-        new_path_node = this->path_node;
+      if(this->apex->f.size() == 2){
+        return this->update_nodes_by_merge_if_bounded(other, eps, MergeStrategy::SMALLER_G2);
       }else{
-        return false;
+        return this->update_nodes_by_merge_if_bounded(other, eps, MergeStrategy::MORE_SLACK);
       }
     }
   }
