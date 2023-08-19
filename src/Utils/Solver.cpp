@@ -57,7 +57,7 @@ bool Solver::DomPrune(std::vector<CostVector>& solution_costs, std::list<JointPa
             // getchar();
             bool is_dominated_by_this_one = true;
             for (int i = 0; i < solution_cost.size(); i++) {
-                if (iter->first.at(i) * (1 + eps) < solution_cost.at(i)) {
+                if (iter->first.at(i) * (1 + eps) <= solution_cost.at(i)) {
                     is_dominated_by_this_one = false;
                     break;
                 }
@@ -83,7 +83,7 @@ bool Solver::DomPrune(std::vector<CostVector>& solution_costs, CostVector& real_
     for (auto& solution_cost : solution_costs) {
         bool is_dominated = true;
         for (int i = 0; i < solution_cost.size(); i++) {
-            if (real_cost.at(i) * (1 + eps) < solution_cost.at(i)) {
+            if (real_cost.at(i) * (1 + eps) <= solution_cost.at(i)) {
                 is_dominated = false;
                 break;
             }
@@ -107,8 +107,8 @@ void Solver::NonDomJointPath(HighLevelNodePtr node, MergeStrategy ms, double eps
     node->joint_path_list.clear();
     
     std::list<JointPathTuple> joint_path_vector;
-    joint_path_vector.push_back(std::make_tuple(CostVector(node->indiv_apex_costs.front()[0].size(), 0), 
-            CostVector(node->indiv_apex_costs.front()[0].size(), 0), std::vector<size_t>(), -1));
+    joint_path_vector.push_back(std::make_tuple(CostVector(node->indiv_apex_costs.at(0)[0].size(), 0), 
+            CostVector(node->indiv_apex_costs.at(0)[0].size(), 0), std::vector<size_t>(), -1));
 
     for(int i = 0; i < node->indiv_paths_list.size(); i++){
         if(i == agent_id){
@@ -419,6 +419,7 @@ bool Solver::HighLevelMerge(JointPathTuple& existing_path, JointPathTuple& new_p
             for(int i = 0; i < apex.size(); i++){
                 if(std::get<1>(existing_path).at(i) >= ((double)apex.at(i))*(1+eps)){
                     can_merge1 = false;
+                    break;
                 }
             }
             if(can_merge1){
@@ -428,6 +429,7 @@ bool Solver::HighLevelMerge(JointPathTuple& existing_path, JointPathTuple& new_p
             for(int i = 0; i < apex.size(); i++){
                 if(std::get<1>(new_path).at(i) >= ((double)apex.at(i))*(1+eps)){
                     can_merge2 = false;
+                    break;
                 }
             }
             if(can_merge2){
@@ -440,6 +442,7 @@ bool Solver::HighLevelMerge(JointPathTuple& existing_path, JointPathTuple& new_p
             for(int i = 0; i < apex.size(); i++){
                 if(std::get<1>(new_path).at(i) >= ((double)apex.at(i))*(1+eps)){
                     can_merge1 = false;
+                    break;
                 }
             }
             if(can_merge1){
@@ -449,6 +452,7 @@ bool Solver::HighLevelMerge(JointPathTuple& existing_path, JointPathTuple& new_p
             for(int i = 0; i < apex.size(); i++){
                 if(std::get<1>(existing_path).at(i) >= ((double)apex.at(i))*(1+eps)){
                     can_merge2 = false;
+                    break;
                 }
             }
             if(can_merge2){
@@ -464,64 +468,204 @@ bool Solver::HighLevelMerge(JointPathTuple& existing_path, JointPathTuple& new_p
             for(int i = 0; i < apex.size(); i++){
                 if(std::get<1>(existing_path).at(i) >= ((double)apex.at(i))*(1+eps)){
                     can_merge1 = false;
+                    break;
                 }
             }
             if(can_merge1){
                 existing_path = std::make_tuple(apex, std::get<1>(existing_path), std::get<2>(existing_path), std::get<3>(existing_path));
                 return true;
             }
-            // for(int i = 0; i < apex.size(); i++){
-            //     if(std::get<1>(new_path).at(i) >= ((double)apex.at(i))*(1+eps)){
-            //         can_merge2 = false;
-            //     }
-            // }
-            // if(can_merge2){
-            //     existing_path = std::make_tuple(apex, std::get<1>(new_path), std::get<2>(new_path));
-            //     return true;
-            // }
             return false;
         }else if(conflict_num2 < conflict_num1){
             bool can_merge1 = true, can_merge2 = true;
             for(int i = 0; i < apex.size(); i++){
                 if(std::get<1>(new_path).at(i) >= ((double)apex.at(i))*(1+eps)){
                     can_merge1 = false;
+                    break;
                 }
             }
             if(can_merge1){
                 existing_path = std::make_tuple(apex, std::get<1>(new_path), std::get<2>(new_path), std::get<3>(new_path));
                 return true;
             }
-            // for(int i = 0; i < apex.size(); i++){
-            //     if(std::get<1>(existing_path).at(i) >= ((double)apex.at(i))*(1+eps)){
-            //         can_merge2 = false;
-            //     }
-            // }
-            // if(can_merge2){
-            //     existing_path = std::make_tuple(apex, std::get<1>(existing_path), std::get<2>(existing_path));
-            //     return true;
-            // }
             return false;
         }else{
+            bool isdominated = true;
+            for(int i = 0; i < std::get<1>(existing_path).size(); i++){
+                if(std::get<1>(existing_path).at(i) < std::get<1>(new_path).at(i)){
+                    isdominated = false;
+                    break;
+                }
+            }
             bool can_merge1 = true, can_merge2 = true;
+            if(!isdominated){
+                for(int i = 0; i < apex.size(); i++){
+                    if(std::get<1>(existing_path).at(i) >= ((double)apex.at(i))*(1+eps)){
+                        can_merge1 = false;
+                        break;
+                    }
+                }
+                if(can_merge1){
+                    existing_path = std::make_tuple(apex, std::get<1>(existing_path), std::get<2>(existing_path), std::get<3>(existing_path));
+                    return true;
+                }
+            }
             for(int i = 0; i < apex.size(); i++){
-                if(std::get<1>(existing_path).at(i) >= ((double)apex.at(i))*(1+eps)){
+                if(std::get<1>(new_path).at(i) >= ((double)apex.at(i))*(1+eps)){
                     can_merge2 = false;
+                    break;
                 }
             }
             if(can_merge2){
-                existing_path = std::make_tuple(apex, std::get<1>(existing_path), std::get<2>(existing_path), std::get<3>(existing_path));
-                return true;
-            }
-            return false;
-            for(int i = 0; i < apex.size(); i++){
-                if(std::get<1>(new_path).at(i) >= ((double)apex.at(i))*(1+eps)){
-                    can_merge1 = false;
-                }
-            }
-            if(can_merge1){
                 existing_path = std::make_tuple(apex, std::get<1>(new_path), std::get<2>(new_path), std::get<3>(new_path));
                 return true;
             }
+            return false;
+            // bool isfirst = true;
+            // for(int i = 0; i < std::get<1>(existing_path).size(); i++){
+            //     if(std::get<1>(existing_path).at(i) < std::get<1>(new_path).at(i)){
+            //         break;
+            //     }
+            //     if(std::get<1>(existing_path).at(i) > std::get<1>(new_path).at(i)){
+            //         isfirst = false;
+            //         break;
+            //     }
+            // }
+            // if(isfirst){
+            //     bool can_merge1 = true, can_merge2 = true;
+            //     for(int i = 0; i < apex.size(); i++){
+            //         if(std::get<1>(existing_path).at(i) >= ((double)apex.at(i))*(1+eps)){
+            //             can_merge1 = false;
+            //             break;
+            //         }
+            //     }
+            //     if(can_merge1){
+            //         existing_path = std::make_tuple(apex, std::get<1>(existing_path), std::get<2>(existing_path), std::get<3>(existing_path));
+            //         return true;
+            //     }
+            //     for(int i = 0; i < apex.size(); i++){
+            //         if(std::get<1>(new_path).at(i) >= ((double)apex.at(i))*(1+eps)){
+            //             can_merge2 = false;
+            //             break;
+            //         }
+            //     }
+            //     if(can_merge2){
+            //         existing_path = std::make_tuple(apex, std::get<1>(new_path), std::get<2>(new_path), std::get<3>(new_path));
+            //         return true;
+            //     }
+            //     return false;
+            // }else{
+            //     bool can_merge1 = true, can_merge2 = true;
+            //     for(int i = 0; i < apex.size(); i++){
+            //         if(std::get<1>(new_path).at(i) >= ((double)apex.at(i))*(1+eps)){
+            //             can_merge1 = false;
+            //             break;
+            //         }
+            //     }
+            //     if(can_merge1){
+            //         existing_path = std::make_tuple(apex, std::get<1>(new_path), std::get<2>(new_path), std::get<3>(new_path));
+            //         return true;
+            //     }
+            //     for(int i = 0; i < apex.size(); i++){
+            //         if(std::get<1>(existing_path).at(i) >= ((double)apex.at(i))*(1+eps)){
+            //             can_merge2 = false;
+            //             break;
+            //         }
+            //     }
+            //     if(can_merge2){
+            //         existing_path = std::make_tuple(apex, std::get<1>(existing_path), std::get<2>(existing_path), std::get<3>(existing_path));
+            //         return true;
+            //     }
+            //     return false;
+            // }
+
+
+            // int first;   // choose the larger-lexico, but not be dominated
+            // for(int i = 0; i < std::get<1>(existing_path).size(); i++){
+            //     if(std::get<1>(existing_path).at(i) < std::get<1>(new_path).at(i)){ // new_path is prior
+            //         first = 1;
+            //         break;
+            //     }else if(std::get<1>(existing_path).at(i) > std::get<1>(new_path).at(i)){  // existing_path is prior
+            //         first = 0;
+            //         break;
+            //     }
+            // }
+            // bool isdominated = true;
+            // if(first){
+            //     for(int i = 0; i < std::get<1>(existing_path).size(); i++){
+            //         if(std::get<1>(existing_path).at(i) > std::get<1>(new_path).at(i)){
+            //             isdominated = false;
+            //             break;
+            //         }
+            //     }
+            //     if(isdominated){
+            //         first = 0;
+            //     }
+            // }else{
+            //     for(int i = 0; i < std::get<1>(existing_path).size(); i++){
+            //         if(std::get<1>(existing_path).at(i) < std::get<1>(new_path).at(i)){
+            //             isdominated = false;
+            //             break;
+            //         }
+            //     }
+            //     if(isdominated){
+            //         first = 1;
+            //     }
+            // }
+
+            // if(!first){
+            //     bool can_merge1 = true, can_merge2 = true;
+            //     for(int i = 0; i < apex.size(); i++){
+            //         if(std::get<1>(existing_path).at(i) >= ((double)apex.at(i))*(1+eps)){
+            //             can_merge1 = false;
+            //             break;
+            //         }
+            //     }
+            //     if(can_merge1){
+            //         existing_path = std::make_tuple(apex, std::get<1>(existing_path), std::get<2>(existing_path), std::get<3>(existing_path));
+            //         return true;
+            //     }
+            //     if(isdominated){
+            //         return false;
+            //     }
+            //     for(int i = 0; i < apex.size(); i++){
+            //         if(std::get<1>(new_path).at(i) >= ((double)apex.at(i))*(1+eps)){
+            //             can_merge2 = false;
+            //             break;
+            //         }
+            //     }
+            //     if(can_merge2){
+            //         existing_path = std::make_tuple(apex, std::get<1>(new_path), std::get<2>(new_path), std::get<3>(new_path));
+            //         return true;
+            //     }
+            //     return false;
+            // }else{
+            //     bool can_merge1 = true, can_merge2 = true;
+            //     for(int i = 0; i < apex.size(); i++){
+            //         if(std::get<1>(new_path).at(i) >= ((double)apex.at(i))*(1+eps)){
+            //             can_merge1 = false;
+            //             break;
+            //         }
+            //     }
+            //     if(can_merge1){
+            //         existing_path = std::make_tuple(apex, std::get<1>(new_path), std::get<2>(new_path), std::get<3>(new_path));
+            //         return true;
+            //     }
+            //     if(isdominated){
+            //         return false;
+            //     }
+            //     for(int i = 0; i < apex.size(); i++){
+            //         if(std::get<1>(existing_path).at(i) >= ((double)apex.at(i))*(1+eps)){
+            //             can_merge2 = false;
+            //             break;
+            //         }
+            //     }
+            //     if(can_merge2){
+            //         existing_path = std::make_tuple(apex, std::get<1>(existing_path), std::get<2>(existing_path), std::get<3>(existing_path));
+            //         return true;
+            //     }
+            //     return false;
+            // }
         }
     }else{
         std::cout << std::endl << "merge strategy only SMALLER_G2 and RANDOM";
@@ -537,14 +681,12 @@ void Solver::calculateCAT(HighLevelNodePtr node, CAT& cat, int agent_id)
         }
         for(int j = 0; j < node->indiv_paths_list.at(i)[0].size(); j++){
             size_t node_id = node->indiv_paths_list.at(i)[0].at(j);
-            if(std::find(cat.at(node_id).begin(), cat.at(node_id).end(), j) == cat.at(node_id).end()){
-                cat.at(node_id).push_back(j);
-            }
+            cat.at(node_id).push_back(j);
         }
     }
 }
 
-std::tuple<double, double, double, int, int> Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::program_options::variables_map& vm, 
+std::tuple<double, double, double, double, int, int> Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::program_options::variables_map& vm, 
         std::vector<std::pair<size_t, size_t>>& start_end, MergeStrategy& ms, LoggerPtr& logger, 
         HSolutionID& hsolution_ids, std::vector<CostVector>& hsolution_costs, std::ofstream& Output)
 {
@@ -555,8 +697,9 @@ std::tuple<double, double, double, int, int> Solver::search(size_t graph_size, s
     int agent_num = vm["agent_num"].as<int>();
     double Heps_merge_max = vm["hem"].as<double>();
     double Heps_conflict_prune = vm["hep"].as<double>();
-    double Heps_nonconflict_prune = 0.0001;
+    double Heps_nonconflict_prune = 0.0;
     // double Heps_conflict_prune = 0;
+    double eps = vm["eps"].as<double>();
     double Leps_merge = vm["lem"].as<double>();
     double Leps_prune = vm["lep"].as<double>();
     double time_limit = vm["cutoffTime"].as<int>();
@@ -565,7 +708,7 @@ std::tuple<double, double, double, int, int> Solver::search(size_t graph_size, s
     MergeStrategy l_ms = MergeStrategy::LEAST_CONFLICT;
     
     double Heps_merge = Heps_merge_max;
-    double NonDomTime = 0, LowLevelTime = 0, DomPruneTime = 0, ConflictionTime = 0;
+    double NonDomTime = 0, LowLevelTime = 0, DomPruneTime = 0, ConflictionTime = 0, CATTime;
     int DomPruneNum = 0, extra_solution = 0;
 
     auto t0 = std::chrono::high_resolution_clock::now();    // record time
@@ -601,6 +744,7 @@ std::tuple<double, double, double, int, int> Solver::search(size_t graph_size, s
     root_node->rep_id_list = root_node->joint_path_list.front().second;
     root_node->rep_apex_cost = root_node->joint_path_list.front().first;
     open_list.insert(root_node);
+    cat.clear();
 
 
     std::tuple<int, int, CostVector, size_t> cft;
@@ -614,34 +758,34 @@ std::tuple<double, double, double, int, int> Solver::search(size_t graph_size, s
         }
         auto node = open_list.pop();
 
-        if(Heps_merge > 0.001 || Heps_conflict_prune > 0.001 || Leps_merge > 0.001 || Leps_prune > 0.001){
-        //  exhaust remaing joint path in high-level node, if no confliction, then add to solution set
-        //  remark: this cannot ensure non-dominated set
-            for(auto iter = node->joint_path_list.begin(); iter != node->joint_path_list.end(); iter++){
-                CostVector  real_cost(iter->first.size(), 0);
-                for(int i = 0; i < agent_num; i++){
-                    add_cost(real_cost, node->indiv_real_costs.at(i)[iter->second.at(i)]);
-                }
-                if(DomPrune(hsolution_costs, real_cost, Heps_nonconflict_prune) 
-                || conflict_checker.is_conflict(*iter, node->indiv_paths_list, agent_num)){
-                    continue;
-                }
-                std::vector<std::vector<size_t>> new_hsolution;
-                CostVector  new_cost(node->rep_apex_cost.size(), 0);
-                for(int i = 0; i < agent_num; i ++){
-                    new_hsolution.push_back(node->indiv_paths_list.at(i)[iter->second.at(i)]);
-                    add_cost(new_cost, node->indiv_real_costs.at(i)[iter->second.at(i)]);
-                }
-                hsolution_ids.push_back(new_hsolution);
-                hsolution_costs.push_back(new_cost);
-                hsolution_apex_costs.push_back(node->rep_apex_cost);
-                std::cout << "there is a solution" << std::endl;
-                extra_solution ++;
+    //  exhaust all joint path in high-level node, if no confliction, then add to solution set
+    //  remark: this cannot ensure non-dominated set
+        for(auto iter = node->joint_path_list.begin(); iter != node->joint_path_list.end(); iter++){
+            CostVector  real_cost(iter->first.size(), 0);
+            for(int i = 0; i < agent_num; i++){
+                add_cost(real_cost, node->indiv_real_costs.at(i)[iter->second.at(i)]);
             }
+            if(DomPrune(hsolution_costs, real_cost, 0) 
+            || conflict_checker.is_conflict(*iter, node->indiv_paths_list, agent_num)){
+                continue;
+            }
+            std::vector<std::vector<size_t>> new_hsolution;
+            for(int i = 0; i < agent_num; i ++){
+                new_hsolution.push_back(node->indiv_paths_list.at(i)[iter->second.at(i)]);
+            }
+            hsolution_ids.push_back(new_hsolution);
+            hsolution_costs.push_back(real_cost);
+            hsolution_apex_costs.push_back(iter->first);
+            std::cout << "there is a solution" << std::endl;
+            extra_solution ++;
         }
 
         //  Dom Prune
-        DomPrune(hsolution_costs, node->joint_path_list, Heps_conflict_prune, DomPruneNum);
+        if(algorithm == "Apex"){
+            DomPrune(hsolution_costs, node->joint_path_list, Heps_conflict_prune, DomPruneNum);
+        }else{
+            DomPrune(hsolution_costs, node->joint_path_list, eps, DomPruneNum);
+        }
         if(node->joint_path_list.empty()){
             continue;
         }
@@ -676,14 +820,20 @@ std::tuple<double, double, double, int, int> Solver::search(size_t graph_size, s
                 
 
             //  Low Level Search
+                auto _tt1 = std::chrono::high_resolution_clock::now(); // for timing.
+                CAT _cat(graph_size);
                 if(algorithm == "Apex"){
-                    calculateCAT(root_node, cat, agent_id);
+                    calculateCAT(root_node, _cat, agent_id);
                 }
+                auto _tt2 = std::chrono::high_resolution_clock::now();
+                auto durationtt = std::chrono::duration_cast<std::chrono::microseconds>(_tt2-_tt1);
+                CATTime += ((double)durationtt.count())/1000000.0;
+
                 auto _t_0_ = std::chrono::high_resolution_clock::now(); // for timing.
                 single_run_map(graph_size, edges, start_end.at(agent_id).first, start_end.at(agent_id).second, 
                     output, algorithm, l_ms, logger, Leps_merge, Leps_prune, time_limit, new_node->indiv_paths_list.at(agent_id), 
                     new_node->indiv_apex_costs.at(agent_id), new_node->indiv_real_costs.at(agent_id), 
-                    new_node->vertex_constraints[agent_id], new_node->edge_constraints[agent_id], cat, new_node->conflict_num); 
+                    new_node->vertex_constraints[agent_id], new_node->edge_constraints[agent_id], _cat, new_node->conflict_num); 
                 auto _t_1_ = std::chrono::high_resolution_clock::now();
                 auto duration0__ = std::chrono::duration_cast<std::chrono::microseconds>(_t_1_ - _t_0_);
                 LowLevelTime += ((double)duration0__.count())/1000000.0;
@@ -721,14 +871,20 @@ std::tuple<double, double, double, int, int> Solver::search(size_t graph_size, s
                 add_constraint(new_node->edge_constraints, agent_id, std::get<2>(cft).at(i), 
                     std::get<2>(cft).at(1-i), std::get<3>(cft));
 
+                auto _tt1 = std::chrono::high_resolution_clock::now(); // for timing.
+                CAT _cat(graph_size);
                 if(algorithm == "Apex"){
-                    calculateCAT(root_node, cat, agent_id);
+                    calculateCAT(root_node, _cat, agent_id);
                 }
+                auto _tt2 = std::chrono::high_resolution_clock::now();
+                auto durationtt = std::chrono::duration_cast<std::chrono::microseconds>(_tt2-_tt1);
+                CATTime += ((double)durationtt.count())/1000000.0;
+
                 auto _t_0_ = std::chrono::high_resolution_clock::now(); // for timing.
                 single_run_map(graph_size, edges, start_end.at(agent_id).first, start_end.at(agent_id).second, 
                     output, algorithm, l_ms, logger, Leps_merge, Leps_prune, time_limit, new_node->indiv_paths_list.at(agent_id), 
                     new_node->indiv_apex_costs.at(agent_id), new_node->indiv_real_costs.at(agent_id), 
-                    new_node->vertex_constraints[agent_id], new_node->edge_constraints[agent_id], cat, new_node->conflict_num); 
+                    new_node->vertex_constraints[agent_id], new_node->edge_constraints[agent_id], _cat, new_node->conflict_num); 
                 auto _t_1_ = std::chrono::high_resolution_clock::now();
                 auto duration0__ = std::chrono::duration_cast<std::chrono::microseconds>(_t_1_ - _t_0_);
                 LowLevelTime += ((double)duration0__.count())/1000000.0;
@@ -747,6 +903,7 @@ std::tuple<double, double, double, int, int> Solver::search(size_t graph_size, s
                 if(new_node->joint_path_list.empty()){
                     continue;
                 }
+                
                 auto __t2 = std::chrono::high_resolution_clock::now(); // for timing.
                 auto duration2_ = std::chrono::duration_cast<std::chrono::microseconds>(__t2 - __t1);
                 NonDomTime += ((double)duration2_.count()) / 1000000.0;
@@ -783,7 +940,6 @@ std::tuple<double, double, double, int, int> Solver::search(size_t graph_size, s
             hsolution_costs.push_back(ele);
         }
     }
-
     auto solution_apex_costs = hsolution_apex_costs;
     hsolution_apex_costs.clear();
     for(auto ele: solution_apex_costs){
@@ -854,7 +1010,7 @@ std::tuple<double, double, double, int, int> Solver::search(size_t graph_size, s
     // Output << "Total Time = " << TotalTime<< std::endl;
     // Output << "DomPruneNum/NodeExpandNum = " << DomPruneNum << "/" << constraint_num << std::endl;
     // Output << std::endl << std::endl;
-    return std::tuple<double, double, double, int, int>(NonDomTime, LowLevelTime, TotalTime, DomPruneNum, constraint_num);
+    return std::tuple<double, double, double, double, int, int>(NonDomTime, LowLevelTime, TotalTime, CATTime, DomPruneNum, constraint_num);
 }
 // //  print confliction information
     // std::cout << "one confict path" << std::endl;

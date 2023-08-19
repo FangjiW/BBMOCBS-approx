@@ -167,8 +167,10 @@ void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs,
                 continue;
             }
 
-            if(std::find(cat.at(next_ap->id).begin(), cat.at(next_ap->id).end(), next_ap->t) != cat.at(next_ap->id).end()){
-                next_ap->path_node->conflict_num ++;
+            for(int ele: cat.at(next_ap->id)){
+                if(next_ap->t == ele){
+                    next_ap->path_node->conflict_num ++;
+                }
             }
 
             // If not dominated extend path pair and push to queue

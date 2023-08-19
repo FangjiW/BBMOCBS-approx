@@ -113,7 +113,7 @@ dir = opendir(directoryPath.c_str());
 int scene_num = 0;
 int total_num = 0;
 int total_success_num = 0;
-double t_NonDomTime = 0, t_LowLevelTime = 0, t_TotalTime = 0, t_DomPruneNum = 0, t_constraint_num = 0;
+double t_NonDomTime = 0, t_LowLevelTime = 0, t_TotalTime = 0, t_CATTime = 0, t_DomPruneNum = 0, t_constraint_num = 0;
 while ((entry = readdir(dir)) != NULL) {
     if (entry->d_type == DT_REG) {
         scene_num ++;
@@ -125,7 +125,7 @@ while ((entry = readdir(dir)) != NULL) {
         p.read_config(filePath, map, vm["agent_num"].as<int>(), start_end);
         output << "************************************************************************" << std::endl;
         output << "Config File:  " << filePath << std::endl << std::endl;
-        std::vector<std::tuple<double, double, double, int, int>> temp;
+        std::vector<std::tuple<double, double, double, double, int, int>> temp;
         int success_num = 0;
         for(int i = 1; i < vm["r1"].as<int>()+1; i++){
             std::cout << "iteration: " << scene_num << "      run number: " << i << std::endl;
@@ -146,24 +146,27 @@ while ((entry = readdir(dir)) != NULL) {
             total_success_num ++;
             temp.push_back(one_data);
         }
-        double NonDomTime = 0, LowLevelTime = 0, TotalTime = 0, DomPruneNum = 0, constraint_num = 0;
+        double NonDomTime = 0, LowLevelTime = 0, TotalTime = 0, CATTime = 0, DomPruneNum = 0, constraint_num = 0;
         for(int i = 0; i < temp.size(); i++){
             NonDomTime += std::get<0>(temp.at(i))/(double)success_num;
             LowLevelTime += std::get<1>(temp.at(i))/(double)success_num;
             TotalTime += std::get<2>(temp.at(i))/(double)success_num;
-            DomPruneNum += std::get<3>(temp.at(i))/(double)success_num;
-            constraint_num += std::get<4>(temp.at(i))/(double)success_num;
+            CATTime += std::get<3>(temp.at(i))/(double)success_num;
+            DomPruneNum += std::get<4>(temp.at(i))/(double)success_num;
+            constraint_num += std::get<5>(temp.at(i))/(double)success_num;
 
             t_NonDomTime += std::get<0>(temp.at(i));
             t_LowLevelTime += std::get<1>(temp.at(i));
             t_TotalTime += std::get<2>(temp.at(i));
-            t_DomPruneNum += std::get<3>(temp.at(i));
-            t_constraint_num += std::get<4>(temp.at(i));
+            t_CATTime += std::get<3>(temp.at(i));
+            t_DomPruneNum += std::get<4>(temp.at(i));
+            t_constraint_num += std::get<5>(temp.at(i));
         }
         output << std::endl;
         output << "NonDomTime = " << NonDomTime << std::endl;
         output << "LowLevelTime = " << LowLevelTime << std::endl;
-        output << "Total Time = " << TotalTime<< std::endl;
+        output << "Total Time = " << TotalTime << std::endl;
+        output << "CAT Time = " << CATTime << std::endl;
         output << "DomPruneNum/NodeExpandNum = " << DomPruneNum << "/" << constraint_num << std::endl;
         output << std::endl << std::endl;
         std::cout << "FINISH ONCE" << std::endl;
@@ -173,6 +176,7 @@ output << "AVERAGE :" << std::endl;
 output << "NonDomTime = " << t_NonDomTime/(double)total_success_num << std::endl;
 output << "LowLevelTime = " << t_LowLevelTime/(double)total_success_num << std::endl;
 output << "Total Time = " << t_TotalTime/(double)total_success_num << std::endl;
+output << "CAT Time = " << t_CATTime/(double)total_success_num << std::endl;
 output << "DomPruneNum/NodeExpandNum = " << t_DomPruneNum/(double)total_success_num << "/" << t_constraint_num/(double)total_success_num << std::endl;
 output << "Success Rate = " << total_success_num << "/" << total_num << " = " << (double)total_success_num/total_num;
     // Solver      solver;
