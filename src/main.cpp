@@ -43,7 +43,7 @@ desc.add_options()
     ("algorithm,a", po::value<std::string>()->default_value("Apex"), "low-level solvers (BOA, PPA or Apex search)")
     ("cutoffTime,t", po::value<int>()->default_value(300), "cutoff time (seconds)")
     ("r1", po::value<int>()->default_value(3), "total runing times per scen")
-    ("r2", po::value<int>()->default_value(8), "total scen")
+    ("r2", po::value<int>()->default_value(15), "total scen")
 
     ("output,o", po::value<std::string>()->default_value("output.txt"), "Name of the output file")
     ("logging_file", po::value<std::string>()->default_value(""), "logging file" )
@@ -81,10 +81,10 @@ p.read_map("../dataset/" + vm["map"].as<std::string>() + "/" + vm["map"].as<std:
 
 std::ofstream output;
 if(vm["algorithm"].as<std::string>() == "Apex"){
-    output.open("../" + std::to_string(vm["dim"].as<int>()) + ".out/" + vm["map"].as<std::string>() + "/n=" 
-    + std::to_string(vm["agent_num"].as<int>()) + "/" + std::to_string(vm["hem"].as<double>()).substr(0, 4)
-    + ", " + std::to_string(vm["hep"].as<double>()).substr(0, 4) + ", " + std::to_string(vm["lem"].as<double>()).substr(0, 4) 
-    + ", " + std::to_string(vm["lep"].as<double>()).substr(0, 4));
+    output.open("../_" + std::to_string(vm["dim"].as<int>()) + ".out/" + vm["map"].as<std::string>() + "/n=" 
+    + std::to_string(vm["agent_num"].as<int>()) + "/" + std::to_string(vm["hem"].as<double>()).substr(0, 5)
+    + ", " + std::to_string(vm["hep"].as<double>()).substr(0, 5) + ", " + std::to_string(vm["lem"].as<double>()).substr(0, 5) 
+    + ", " + std::to_string(vm["lep"].as<double>()).substr(0, 5));
 
     auto current_time = std::time(nullptr);
     output << std::ctime(&current_time) << std::endl;
@@ -95,9 +95,9 @@ if(vm["algorithm"].as<std::string>() == "Apex"){
     << ", lep = " << vm["lep"].as<double>() << std::endl << "agent num = " << vm["agent_num"].as<int>() 
     << std::endl << std::endl;
 }else{
-    output.open("../" + std::to_string(vm["dim"].as<int>()) + ".out/" + vm["map"].as<std::string>() + "/n=" 
+    output.open("../_" + std::to_string(vm["dim"].as<int>()) + ".out/" + vm["map"].as<std::string>() + "/n=" 
     + std::to_string(vm["agent_num"].as<int>()) + "/" 
-    + vm["algorithm"].as<std::string>() + "-" + std::to_string(vm["eps"].as<double>()).substr(0, 4));
+    + vm["algorithm"].as<std::string>() + "-" + std::to_string(vm["eps"].as<double>()).substr(0, 5));
     auto current_time = std::time(nullptr);
     output << std::ctime(&current_time) << std::endl;
     output << "Map: " << vm["map"].as<std::string>() << std::endl << vm["algorithm"].as<std::string>() << std::endl
@@ -127,7 +127,7 @@ while ((entry = readdir(dir)) != NULL) {
         output << "Config File:  " << filePath << std::endl << std::endl;
         std::vector<std::tuple<double, double, double, double, int, int>> temp;
         int success_num = 0;
-        for(int i = 1; i < vm["r1"].as<int>()+1; i++){
+        for(int i = 101; i < vm["r1"].as<int>()+101; i++){
             std::cout << "iteration: " << scene_num << "      run number: " << i << std::endl;
             total_num ++;
             Solver      solver;
