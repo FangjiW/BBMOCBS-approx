@@ -6,6 +6,7 @@
 #include <random>
 
 extern std::unordered_map<size_t, std::vector<int>> id2coord;
+extern std::string map_name;
 
 template <typename T>
 bool less_than(const T &a, const T &b, bool lexico=true)
@@ -686,8 +687,8 @@ void Solver::calculateCAT(HighLevelNodePtr node, CAT& cat, int agent_id)
     }
 }
 
-std::tuple<double, double, double, double, int, int> Solver::search(size_t graph_size, std::vector<Edge>& edges, boost::program_options::variables_map& vm, 
-        std::vector<std::pair<size_t, size_t>>& start_end, MergeStrategy& ms, LoggerPtr& logger, 
+std::tuple<double, double, double, double, int, int, int, int> Solver::search(size_t graph_size, std::vector<Edge>& edges, 
+        boost::program_options::variables_map& vm, std::vector<std::pair<size_t, size_t>>& start_end, MergeStrategy& ms, LoggerPtr& logger, 
         HSolutionID& hsolution_ids, std::vector<CostVector>& hsolution_costs, std::ofstream& Output)
 {
     std::vector<CostVector> hsolution_apex_costs;
@@ -765,7 +766,7 @@ std::tuple<double, double, double, double, int, int> Solver::search(size_t graph
             for(int i = 0; i < agent_num; i++){
                 add_cost(real_cost, node->indiv_real_costs.at(i)[iter->second.at(i)]);
             }
-            if(DomPrune(hsolution_costs, real_cost, 0) 
+            if(DomPrune(hsolution_costs, real_cost, 0.00001) 
             || conflict_checker.is_conflict(*iter, node->indiv_paths_list, agent_num)){
                 continue;
             }
@@ -784,7 +785,8 @@ std::tuple<double, double, double, double, int, int> Solver::search(size_t graph
         if(algorithm == "Apex"){
             DomPrune(hsolution_costs, node->joint_path_list, Heps_conflict_prune, DomPruneNum);
         }else{
-            DomPrune(hsolution_costs, node->joint_path_list, eps, DomPruneNum);
+            double _eps = eps >= 0.00001 ? eps : 0.00001;
+            DomPrune(hsolution_costs, node->joint_path_list, _eps, DomPruneNum);
         }
         if(node->joint_path_list.empty()){
             continue;
@@ -793,6 +795,13 @@ std::tuple<double, double, double, double, int, int> Solver::search(size_t graph
         node->rep_apex_cost = node->joint_path_list.front().first;
         cft = conflict_checker.is_conflict(node);
 
+        if(std::get<2>(cft).empty()){
+            for(auto ele: hsolution_costs){
+                std::cout << ele.at(0) << ", " << ele.at(1) << std::endl;
+            }
+            std::cout << node->rep_apex_cost.at(0) << ", " << node->rep_apex_cost.at(1);
+            getchar();
+        }
         assert(!std::get<2>(cft).empty());
 
         auto _t1 = std::chrono::high_resolution_clock::now();
@@ -802,6 +811,7 @@ std::tuple<double, double, double, double, int, int> Solver::search(size_t graph
             auto duration1 = std::chrono::duration_cast<std::chrono::microseconds>(tnow - t0);
             std::cout << "[INFO] * Solver::Search, after " << constraint_num << " conflict splits " 
             << "       time = " << ((double)duration1.count())/1000000.0 << std::endl;
+            std::cout << map_name << std::endl;
         }
 
         if(std::get<2>(cft).size() == 1){   // vertex confliction, split 1 or 2 constraints
@@ -916,38 +926,27 @@ std::tuple<double, double, double, double, int, int> Solver::search(size_t graph
     }
     int solution_num = hsolution_costs.size();
 //  post process
-    std::sort(hsolution_costs.begin(), hsolution_costs.end());
-    std::sort(hsolution_apex_costs.begin(), hsolution_apex_costs.end());
-
-    auto solution_costs = hsolution_costs;
-    hsolution_costs.clear();
-    for(auto ele: solution_costs){
-        bool is_dominated = false;
-        for(auto ele1: hsolution_costs){
-            bool is_dominated_by_this_one = true;
-            for(int i = 0; i < ele1.size(); i++){
-                if(ele1.at(i) > ele.at(i)){
-                    is_dominated_by_this_one = false;
-                    break;
-                }
-            }
-            if(is_dominated_by_this_one){
-                is_dominated = true;
-                break;
-            }
-        }
-        if(!is_dominated){
-            hsolution_costs.push_back(ele);
-        }
+    std::vector<std::pair<CostVector, CostVector>> apex_real_list;
+    for(int i = 0; i < solution_num; i++){
+        apex_real_list.push_back(std::pair<CostVector, CostVector>(hsolution_apex_costs.at(i), hsolution_costs.at(i)));
     }
-    auto solution_apex_costs = hsolution_apex_costs;
-    hsolution_apex_costs.clear();
-    for(auto ele: solution_apex_costs){
+    std::sort(apex_real_list.begin(), apex_real_list.end(), [](std::pair<CostVector, CostVector>& a, std::pair<CostVector, CostVector>& b){
+        for(int i = 0; i < a.first.size(); i++){
+            if(a.first.at(i) != b.first.at(i)){
+                return a.first.at(i) < b.first.at(i);
+            }
+        }
+        return true;
+    });
+
+    auto apex_real = apex_real_list;
+    hsolution_costs.clear(); hsolution_apex_costs.clear();
+    for(auto ele: apex_real){
         bool is_dominated = false;
         for(auto ele1: hsolution_apex_costs){
             bool is_dominated_by_this_one = true;
             for(int i = 0; i < ele1.size(); i++){
-                if(ele1.at(i) > ele.at(i)){
+                if(ele1.at(i) > ele.first.at(i)){
                     is_dominated_by_this_one = false;
                     break;
                 }
@@ -958,9 +957,55 @@ std::tuple<double, double, double, double, int, int> Solver::search(size_t graph
             }
         }
         if(!is_dominated){
-            hsolution_apex_costs.push_back(ele);
+            hsolution_apex_costs.push_back(ele.first);
+            hsolution_costs.push_back(ele.second);
         }
     }
+    // std::sort(hsolution_costs.begin(), hsolution_costs.end());
+    // std::sort(hsolution_apex_costs.begin(), hsolution_apex_costs.end());
+
+    // auto solution_costs = hsolution_costs;
+    // hsolution_costs.clear();
+    // for(auto ele: solution_costs){
+    //     bool is_dominated = false;
+    //     for(auto ele1: hsolution_costs){
+    //         bool is_dominated_by_this_one = true;
+    //         for(int i = 0; i < ele1.size(); i++){
+    //             if(ele1.at(i) > ele.at(i)){
+    //                 is_dominated_by_this_one = false;
+    //                 break;
+    //             }
+    //         }
+    //         if(is_dominated_by_this_one){
+    //             is_dominated = true;
+    //             break;
+    //         }
+    //     }
+    //     if(!is_dominated){
+    //         hsolution_costs.push_back(ele);
+    //     }
+    // }
+    // auto solution_apex_costs = hsolution_apex_costs;
+    // hsolution_apex_costs.clear();
+    // for(auto ele: solution_apex_costs){
+    //     bool is_dominated = false;
+    //     for(auto ele1: hsolution_apex_costs){
+    //         bool is_dominated_by_this_one = true;
+    //         for(int i = 0; i < ele1.size(); i++){
+    //             if(ele1.at(i) > ele.at(i)){
+    //                 is_dominated_by_this_one = false;
+    //                 break;
+    //             }
+    //         }
+    //         if(is_dominated_by_this_one){
+    //             is_dominated = true;
+    //             break;
+    //         }
+    //     }
+    //     if(!is_dominated){
+    //         hsolution_apex_costs.push_back(ele);
+    //     }
+    // }
 
     if(is_success){
         Output << "SUCCESS" << std::endl;
@@ -998,7 +1043,7 @@ std::tuple<double, double, double, double, int, int> Solver::search(size_t graph
         Output << "}, ";
     }
     Output << std::endl;
-    Output << "Extra Solution Number = " << extra_solution << "/" << solution_num << std::endl << std::endl;
+    Output << "SolutionNumber = " << extra_solution << "/" << hsolution_costs.size() << std::endl << std::endl;
     // Output << std::endl;
     // Output << "NonDomTime = " << NonDomTime << std::endl;
     // Output << "LowLevelTime = " << LowLevelTime << std::endl;
@@ -1010,7 +1055,8 @@ std::tuple<double, double, double, double, int, int> Solver::search(size_t graph
     // Output << "Total Time = " << TotalTime<< std::endl;
     // Output << "DomPruneNum/NodeExpandNum = " << DomPruneNum << "/" << constraint_num << std::endl;
     // Output << std::endl << std::endl;
-    return std::tuple<double, double, double, double, int, int>(NonDomTime, LowLevelTime, TotalTime, CATTime, DomPruneNum, constraint_num);
+    return std::tuple<double, double, double, double, int, int, int, int>(NonDomTime, LowLevelTime, TotalTime, CATTime, DomPruneNum, constraint_num, 
+        extra_solution, hsolution_costs.size());
 }
 // //  print confliction information
     // std::cout << "one confict path" << std::endl;

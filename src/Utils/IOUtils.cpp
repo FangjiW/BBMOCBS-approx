@@ -212,7 +212,7 @@ void PreProcessor::read_map(std::string map_file_name, Map& map, std::unordered_
         std::getline(Input, line);
 
         for (int y = 0; y < width; ++y) {
-            if (line[y] == '@') {
+            if (line[y] == '@' || line[y] == 'T') {
                 map.setVal(x, y, -1);
                 map.setID(x, y, -1);
             } else if (line[y] == '.') {

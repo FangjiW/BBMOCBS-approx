@@ -61,6 +61,7 @@
         "variant": "cpp",
         "bit": "cpp",
         "codecvt": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "run-room-32-32-4": "cpp"
     }
 }
