@@ -18,7 +18,7 @@ protected:
 public:
     virtual std::string get_solver_name() {return "BOA*"; }
 
-    BOAStar(const AdjacencyMatrix &adj_matrix, Pair<double> eps, const LoggerPtr logger=nullptr);
+    BOAStar(const AdjacencyMatrix &adj_matrix, Pair<double> eps, int turn_mode, int turn_cost, const LoggerPtr logger=nullptr);
 
     void operator()(PathSet& solution_ids, CostSet& solution_apex_costs, CostSet& solution_real_costs, 
         size_t source, size_t target, Heuristic &heuristic, VertexConstraint& vertex_constraints, 

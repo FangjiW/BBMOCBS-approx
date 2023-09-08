@@ -3,13 +3,14 @@
 #include "Utils/Definitions.h"
 #include "Utils/Logger.h"
 
-
 class AbstractSolver {
 protected:
     const AdjacencyMatrix   &adj_matrix;
     // Pair<double>            eps;
     EPS eps_prune;
     EPS eps_merge;
+    int turn_mode;
+    int turn_cost;
 
     size_t num_expansion = 0;
     size_t num_generation= 0;
@@ -35,10 +36,31 @@ public:
         size_t source, size_t target, Heuristic &heuristic, VertexConstraint& vertex_constraints, 
         EdgeConstraint& edge_constrains, unsigned int time_limit, CAT& cat, std::unordered_map<int, int>& conflict_num_map) = 0;
         
-    bool is_constraint(NodePtr node, VertexConstraint& vertex_constraints, EdgeConstraint& edge_constraints);
-
-    
-    AbstractSolver(const AdjacencyMatrix &adj_matrix, EPS eps_prune, const LoggerPtr logger): adj_matrix(adj_matrix), eps_prune(eps_prune), logger(logger) {}
-    AbstractSolver(const AdjacencyMatrix &adj_matrix, EPS eps_merge, EPS eps_prune, const LoggerPtr logger): adj_matrix(adj_matrix), eps_merge(eps_merge), eps_prune(eps_prune), logger(logger) {}
+    AbstractSolver(const AdjacencyMatrix &adj_matrix, EPS eps_prune, int turn_mode, int turn_cost, const LoggerPtr logger): adj_matrix(adj_matrix), eps_prune(eps_prune), logger(logger), turn_mode(turn_mode), turn_cost(turn_cost) {}
+    AbstractSolver(const AdjacencyMatrix &adj_matrix, EPS eps_merge, EPS eps_prune, int turn_mode, int turn_cost, const LoggerPtr logger): adj_matrix(adj_matrix), eps_merge(eps_merge), eps_prune(eps_prune), logger(logger), turn_mode(turn_mode), turn_cost(turn_cost) {}
     virtual ~AbstractSolver(){}
 };
+
+inline bool is_constraint(NodePtr node, VertexConstraint& vertex_constraints, EdgeConstraint& edge_constraints)
+{
+    if(vertex_constraints.count(node->t)){
+        for(int i = 0; i < vertex_constraints[node->t].size(); i ++){
+            if(node->id == vertex_constraints[node->t][i]){
+                return true;
+            }
+        }
+    }
+    if(node->parent == nullptr){
+        return false;
+    }
+    if(edge_constraints.count(node->parent->id)){
+        if(edge_constraints[node->parent->id].count(node->parent->t)){
+            for(int i = 0; i < edge_constraints[node->parent->id][node->parent->t].size(); i++){
+                if(node->id == edge_constraints[node->parent->id][node->parent->t].at(i)){
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}

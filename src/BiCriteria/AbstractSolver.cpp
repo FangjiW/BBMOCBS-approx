@@ -54,25 +54,3 @@ void AbstractSolver::end_logging(SolutionSet &solutions, bool succ) {
         LOG_FINISH_SEARCH(*(this->logger), finish_info_json.str());
     }
 }
-
-bool AbstractSolver::is_constraint(NodePtr node, VertexConstraint& vertex_constraints, EdgeConstraint& edge_constraints)
-{
-    if(vertex_constraints.count(node->t)){
-        for(int i = 0; i < vertex_constraints[node->t].size(); i ++){
-            if(node->id == vertex_constraints[node->t][i]){
-                return true;
-            }
-        }
-    }
-    assert(node->parent != nullptr);
-    if(edge_constraints.count(node->parent->id)){
-        if(edge_constraints[node->parent->id].count(node->parent->t)){
-            for(int i = 0; i < edge_constraints[node->parent->id][node->parent->t].size(); i++){
-                if(node->id == edge_constraints[node->parent->id][node->parent->t].at(i)){
-                    return true;
-                }
-            }
-        }
-    }
-    return false;
-}

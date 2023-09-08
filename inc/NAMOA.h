@@ -11,7 +11,7 @@ protected:
 
 public:
 
-    NAMOAdr(const AdjacencyMatrix &adj_matrix, EPS eps, const LoggerPtr logger=nullptr):     AbstractSolver(adj_matrix, eps, logger) {}
+    NAMOAdr(const AdjacencyMatrix &adj_matrix, EPS eps, int turn_mode, int turn_cost, const LoggerPtr logger=nullptr):     AbstractSolver(adj_matrix, eps, turn_mode, turn_cost, logger) {}
 
     virtual std::string get_solver_name() {return "NAMOAdr"; }
 

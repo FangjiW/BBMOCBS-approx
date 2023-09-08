@@ -40,6 +40,9 @@ bool LocalCheckLinear::is_dominated(ApexPathPairPtr node){
         if(node->path_node->conflict_num < ap->path_node->conflict_num){
             continue;
         }
+        if(if_turn && !same_orientation(ap->path_node, node->path_node)){
+            continue;
+        }
         if (is_dominated_dr(node->apex, ap->apex)){
             assert(node->apex->f[0] >= ap->apex->f[0]);
             return true;
@@ -56,18 +59,16 @@ void LocalCheckLinear::add_node(ApexPathPairPtr ap){
     }
     for (auto it = min_g2[id][ap->t].begin(); it != min_g2[id][ap->t].end(); ){
         // TODO remove it for performance
+        if(if_turn && !same_orientation((*it)->path_node, ap->path_node)){
+            it ++;
+            continue;
+        }
         assert(! is_dominated_dr(ap->apex, (*it)->apex) || ap->path_node->conflict_num < (*it)->path_node->conflict_num);
         if (is_dominated_dr((*it)->apex, ap->apex) && ap->path_node->conflict_num <= (*it)->path_node->conflict_num){    
             it = min_g2[id][ap->t].erase(it);
         } else {
             it ++;
         }
-        // assert(! is_dominated_dr(ap->apex, (*it)->apex));
-        // if (is_dominated_dr((*it)->apex, ap->apex)){    
-        //     it = min_g2[id][ap->t].erase(it);
-        // } else {
-        //     it ++;
-        // }
     }
 
     min_g2[ap->id][ap->t].push_front(ap);

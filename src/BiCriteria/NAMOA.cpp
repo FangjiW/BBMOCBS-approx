@@ -12,8 +12,12 @@ bool is_dominated_dr(NodePtr node, std::list<NodePtr>& list, EPS eps){
     return false;
 }
 
-void add_node_dr(NodePtr node, std::list<NodePtr>& list){
+void add_node_dr(NodePtr node, std::list<NodePtr>& list, bool if_turn){
     for (auto it = list.begin(); it != list.end(); ){
+        if(if_turn && !((*it)->parent == nullptr && node->parent == nullptr) && (node->parent == nullptr || (*it)->parent == nullptr || node->parent->id != (*it)->parent->id)){
+            it ++;
+            continue;
+        }
         if (is_dominated_dr((*it), node)){
             it = list.erase(it);
         } else {
@@ -23,8 +27,11 @@ void add_node_dr(NodePtr node, std::list<NodePtr>& list){
     list.push_back(node);
 }
 
-bool is_dominated_dr(NodePtr node, std::list<NodePtr>& list){
+bool is_dominated_dr(NodePtr node, std::list<NodePtr>& list, bool if_turn){
     for (auto& n: list){
+        if(if_turn && !(n->parent == nullptr && node->parent == nullptr) && (node->parent == nullptr || n->parent == nullptr || node->parent->id != n->parent->id)){
+            continue;
+        }
         if (is_dominated_dr(node, n)){
             return true;
         }
@@ -61,9 +68,11 @@ void NAMOAdr::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, Co
     // Init open heap
     // std::vector<NodePtr> open;
     // std::make_heap(open.begin(), open.end(), more_than);
+    bool if_turn = turn_mode == -1 ? false : true;
 
-    node = std::make_shared<Node>(source, std::vector<size_t>(adj_matrix.get_num_of_objectives(),0), heuristic(source));
+    node = std::make_shared<Node>(source, std::vector<size_t>(adj_matrix.get_num_of_objectives(),0), heuristic(source, -1, if_turn));
     open.insert(node);
+
 
     while (open.empty() == false) {
         if ((std::clock() - start_time)/CLOCKS_PER_SEC > time_limit){
@@ -74,22 +83,17 @@ void NAMOAdr::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, Co
         node = open.pop();
         num_generation +=1;
 
-        if (is_dominated_dr(node, closed_target, eps_prune) ||
-            closed[node->id].count(node->t) && is_dominated_dr(node, closed[node->id][node->t])
-            ){
-            continue;
-        }
         if(node->id == target){
             if (is_dominated_dr(node, closed_target, eps_prune)){
                 continue;
             }else{
-                add_node_dr(node, closed_target);
+                add_node_dr(node, closed_target, false);
             }
         }else{
-            if(closed[node->id].count(node->t) && is_dominated_dr(node, closed[node->id][node->t])){
+            if(closed[node->id].count(node->t) && is_dominated_dr(node, closed[node->id][node->t], if_turn)){
                 continue;
             }else{
-                add_node_dr(node, closed[node->id][node->t]);
+                add_node_dr(node, closed[node->id][node->t], if_turn);
             }
         }
 
@@ -109,7 +113,25 @@ void NAMOAdr::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, Co
             for (size_t i = 0; i < next_g.size(); i++){
                 next_g[i] = node->g[i] + p_edge->cost[i];
             }
-            auto next_h = heuristic(next_id);
+            auto next_h = heuristic(next_id, node->id, if_turn);
+            extern std::unordered_map<size_t, std::vector<int>> id2coord;
+            if(if_turn){
+                if(node->parent == nullptr){
+                    if(next_id != node->id){
+                        next_g.at(turn_mode) += turn_cost;
+                    }
+                }else{
+                    int x0 = id2coord[node->parent->id].at(0);
+                    int y0 = id2coord[node->parent->id].at(1);
+                    int x1 = id2coord[node->id].at(0);
+                    int y1 = id2coord[node->id].at(1);
+                    int x2 = id2coord[next_id].at(0);
+                    int y2 = id2coord[next_id].at(1);
+                    if(x1-x0 != x2-x1 || y1-y0 != y2-y1){
+                        next_g.at(turn_mode) += turn_cost;
+                    }
+                }
+            }
             next = std::make_shared<Node>(next_id, next_g, next_h, node->t+1, node);
 
             // confliction check
@@ -123,7 +145,7 @@ void NAMOAdr::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, Co
                     continue;
                 }
             }else{
-                if(closed[next->id].count(next->t) && is_dominated_dr(next, closed[next->id][next->t])){
+                if(closed[next->id].count(next->t) && is_dominated_dr(next, closed[next->id][next->t], if_turn)){
                     continue;
                 }
             }

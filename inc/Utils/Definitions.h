@@ -35,7 +35,7 @@ std::ostream& operator<<(std::ostream &stream, const Pair<T> pair) {
 }
 
 
-using Heuristic = std::function<std::vector<size_t>(size_t)>;
+using Heuristic = std::function<std::vector<size_t>(size_t, size_t, bool)>;
 
 // Structs and classes
 struct Edge {
@@ -185,7 +185,7 @@ struct ApexPathPair {
     ApexPathPair(const NodePtr &apex, const NodePtr &path_node, Heuristic& h)
         : apex(apex), path_node(path_node) , parent(path_node->parent), h(h), id(apex->id), t(t){};
 
-    ApexPathPair(const ApexPathPairPtr parent, const Edge& egde);
+    ApexPathPair(const ApexPathPairPtr parent, const Edge& egde, int turn_mode, int turn_cost);
 
 
     bool update_nodes_by_merge_if_bounded(const ApexPathPairPtr &other, const EPS eps, MergeStrategy s=MergeStrategy::SMALLER_G2);
@@ -245,31 +245,6 @@ inline void add_cost(CostVector& a, const CostVector& b)
         a.at(i) += b.at(i);
     }
 }
-// inline CostVector add_cost(CostVector& a, CostVector& b)
-// {
-//     assert(a.size() == b.size());
-//     for(int i = 0; i < a.size(); i ++){
-//         a.at(i) += b.at(i);
-//     }
-// }
-
-// struct IndividualPath
-// {
-//     CostVector      cost_vector;
-//     std::vector<size_t>     node_id;
-// };
-
-// struct JointPath
-// {
-//     std::vector<ApexPathPairPtr>    ap_list;
-//     CostVector      cost;
-//     CostVector      apex_cost;
-    
-// //  constructor
-//     JointPath(){};
-//     JointPath(std::vector<ApexPathPairPtr> solution_list);
-//     JointPath(JointPathPtr, ApexPathPairPtr);
-// };
 
 class HighLevelNode
 {
@@ -302,3 +277,17 @@ public:
 };
 
 #endif //UTILS_DEFINITIONS_H
+
+inline bool same_orientation(NodePtr& ap1, NodePtr& ap2)
+{
+    if(ap1->parent == nullptr && ap2->parent == nullptr){
+        return true;
+    }
+    if(ap1->parent == nullptr || ap2->parent == nullptr){
+        return false;
+    }
+    if(ap1->parent->id == ap2->parent->id){
+        return true;
+    }
+    return false;
+}

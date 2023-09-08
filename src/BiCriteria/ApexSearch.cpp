@@ -7,8 +7,8 @@
 #include "ApexSearch.h"
 
 
-ApexSearch::ApexSearch(const AdjacencyMatrix &adj_matrix, EPS eps_merge, EPS eps_prune, const LoggerPtr logger) :
-    AbstractSolver(adj_matrix, eps_merge, eps_prune, logger),
+ApexSearch::ApexSearch(const AdjacencyMatrix &adj_matrix, EPS eps_merge, EPS eps_prune, int turn_mode, int turn_cost, const LoggerPtr logger) :
+    AbstractSolver(adj_matrix, eps_merge, eps_prune, turn_mode, turn_cost, logger),
     num_of_objectives(adj_matrix.get_num_of_objectives())
 {
     expanded.resize(this->adj_matrix.size()+1);
@@ -19,6 +19,12 @@ void ApexSearch::insert(ApexPathPairPtr &ap, APQueue &queue) {
     std::list<ApexPathPairPtr> &relevant_aps = queue.get_open(ap->id);
     for (auto existing_ap = relevant_aps.begin(); existing_ap != relevant_aps.end(); ++existing_ap) {
         if ((*existing_ap)->is_active == false) {
+            continue;
+        }
+        if(ap->t != (*existing_ap)->t){
+            continue;
+        }
+        if(turn_mode != -1 && !same_orientation(ap->path_node, (*existing_ap)->path_node)){
             continue;
         }
         if (ap->update_nodes_by_merge_if_bounded(*existing_ap, this->eps_merge, ms) == true) {
@@ -65,7 +71,7 @@ bool ApexSearch::is_dominated(ApexPathPairPtr ap, size_t target){
 void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, CostSet& solution_real_costs, 
         size_t source, size_t target, Heuristic &heuristic, VertexConstraint& vertex_constraints, EdgeConstraint& edge_constraints,
         unsigned int time_limit, CAT& cat, std::unordered_map<int, int>& conflict_num_map) 
-{
+{   
     init_search();
 
     auto start_time = std::clock();
@@ -77,7 +83,11 @@ void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs,
     //     local_dom_checker = std::make_unique<LocalCheckLinear>(eps_merge, this->adj_matrix.size());
     //     solution_dom_checker = std::make_unique<SolutionCheckLinear>(eps_prune);
     // }
-    local_dom_checker = std::make_unique<LocalCheckLinear>(eps_merge, this->adj_matrix.size());
+    bool if_turn = false;
+    if(turn_mode != -1){
+        if_turn = true;
+    }
+    local_dom_checker = std::make_unique<LocalCheckLinear>(eps_merge, this->adj_matrix.size(), if_turn);
     solution_dom_checker = std::make_unique<SolutionCheckLinear>(eps_prune);
 
     this->start_logging(source, target);
@@ -96,23 +106,12 @@ void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs,
     // Init open heap
     APQueue open(this->adj_matrix.size()+1);
 
-    NodePtr source_node = std::make_shared<Node>(source, std::vector<size_t>(num_of_objectives, 0), heuristic(source), 0, nullptr);
+    NodePtr source_node = std::make_shared<Node>(source, std::vector<size_t>(num_of_objectives, 0), heuristic(source, -1, if_turn), 0, nullptr);
     ap = std::make_shared<ApexPathPair>(source_node, source_node, heuristic);
     open.insert(ap);
 
 // int i = 0 ;
     while (open.empty() == false) {
-        // i ++;
-        // if(i > 100000){
-        //     for(int j = 0; j < cat.size(); j++){
-        //         for(int k = 0; k < cat.at(j).size(); k++){
-        //             std::cout << cat.at(j).at(k) << " ";
-        //         }
-        //         std::cout << std::endl;
-        //         std::cout << "state" << j << ":" << std::endl; getchar();
-        //     }
-        // getchar();
-        // }
         if ((std::clock() - start_time)/CLOCKS_PER_SEC > time_limit){
             for (auto solution = ap_solutions.begin(); solution != ap_solutions.end(); ++solution) {
                 solutions.push_back((*solution)->path_node);
@@ -153,7 +152,10 @@ void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs,
         for(auto p_edge = outgoing_edges.begin(); p_edge != outgoing_edges.end(); p_edge++) {
             // Prepare extension of path pair
 
-            next_ap = std::make_shared<ApexPathPair>(ap, *p_edge);
+            next_ap = std::make_shared<ApexPathPair>(ap, *p_edge, turn_mode, turn_cost);
+            if(ap->apex->f.at(0) > next_ap->apex->f.at(0)){
+                std::cout << "wrong"; getchar();
+            }
             
             // Constraint check
             if(is_constraint(next_ap->path_node, vertex_constraints, edge_constraints)){
@@ -180,12 +182,20 @@ void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs,
             this->insert(next_ap, open);
             // closed.push_back(pp);
         }
+        // auto _open = open;
+        // while(!_open.empty()){
+        //     auto ele = _open.pop();
+        //     extern std::unordered_map<size_t, std::vector<int>> id2coord;
+        //     if(ele->parent != nullptr && ele->parent->parent != nullptr){
+        //         std::cout << id2coord[ele->parent->parent->id].at(0) << ", " << id2coord[ele->parent->parent->id].at(1) << "    "
+        //          << id2coord[ele->parent->id].at(0) << ", " << id2coord[ele->parent->id].at(1) << "    ";
+        //     }
+        //     std::cout << id2coord[ele->id].at(0) << ", " << id2coord[ele->id].at(1) << "  " << ele->path_node->g.at(0) << ", " << ele->path_node->g.at(1) << std::endl;
+        //     getchar();
+        // }
+        // std::cout << "one time" << std::endl;
         // next_ap = std::make_shared<ApexPathPair>(ap, Edge(ap->id, ap->id, std::vector<size_t>({0, 0})));    // remain place action
-        // this->insert(next_ap, open);
     }
-    // for(auto solution : ap_solutions){
-    //     std::cout << solution->path_node->conflict_num << std::endl;
-    // }
 
     // Pair solutions is used only for logging, as we need both the solutions for testing reasons
     solution_ids.clear();

@@ -52,8 +52,7 @@ double compute_slack(NodePtr apex, NodePtr node,  const EPS eps){
   return min_slack;
 }
 
-
-ApexPathPair::ApexPathPair(const ApexPathPairPtr parent, const Edge&  edge): h(parent->h){
+ApexPathPair::ApexPathPair(const ApexPathPairPtr parent, const Edge&  edge, int turn_mode, int turn_cost): h(parent->h){
   size_t next_id = edge.target;
   id =next_id;
   size_t new_t = parent->path_node->t + 1;
@@ -65,7 +64,39 @@ ApexPathPair::ApexPathPair(const ApexPathPairPtr parent, const Edge&  edge): h(p
     new_apex_g[i] += edge.cost[i];
     new_g[i] += edge.cost[i];
   }
-  auto new_h = h(next_id);
+  this->parent = parent->path_node;
+  this->id = next_id;
+
+  bool if_turn = turn_mode == -1 ? false : true;
+
+  extern std::unordered_map<size_t, std::vector<int>> id2coord;
+  if(if_turn){
+    if(parent->path_node->parent == nullptr){
+      if(id != parent->id){
+        new_g.at(turn_mode) += turn_cost;
+        new_apex_g.at(turn_mode) += turn_cost;
+      }
+    }else{
+      int x0 = id2coord[parent->parent->id].at(0);
+      int y0 = id2coord[parent->parent->id].at(1);
+      int x1 = id2coord[parent->id].at(0);
+      int y1 = id2coord[parent->id].at(1);
+      int x2 = id2coord[id].at(0);
+      int y2 = id2coord[id].at(1);
+      if(x1-x0 != x2-x1 || y1-y0 != y2-y1){
+        new_g.at(turn_mode) += turn_cost;
+        new_apex_g.at(turn_mode) += turn_cost;
+      }
+    }
+  }
+
+  if(parent->apex->f.at(0) > new_apex_g.at(0) + h(next_id, parent->id, if_turn).at(0)){
+    std::cout << id2coord[parent->id].at(0) << "," << id2coord[parent->id].at(1) << " " << id2coord[next_id].at(0) << "," << id2coord[next_id].at(1) << std::endl;
+    std::cout << h(next_id, parent->id, if_turn).at(0) << " ";
+    std::cout << parent->h(parent->id, parent->parent->id, if_turn).at(0);
+  }
+
+  auto new_h = h(next_id, parent->id, if_turn);
   this->apex = std::make_shared<Node>(next_id, new_apex_g, new_h);
   this->path_node = std::make_shared<Node>(next_id, new_g, new_h, new_t);
   this->path_node->parent = parent->path_node;
@@ -194,7 +225,6 @@ bool ApexPathPair::update_nodes_by_merge_if_bounded(const ApexPathPairPtr &other
 
   this->apex = new_apex;
   this->path_node = new_path_node;
-  this->t = new_path_node->t;
   return true;
 }
 

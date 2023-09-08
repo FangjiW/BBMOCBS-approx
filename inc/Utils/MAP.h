@@ -9,22 +9,22 @@ public:
     Map(){};
 
     Map(int width, int height) : height(height), width(width){
-        map_data = new size_t*[width];
-        ids = new size_t*[width];
-        for(int i = 0; i < width; i ++){
-            map_data[i] = new size_t[height];
-            ids[i] = new size_t[height];
+        map_data = new size_t*[height];
+        ids = new size_t*[height];
+        for(int i = 0; i < height; i ++){
+            map_data[i] = new size_t[width];
+            ids[i] = new size_t[width];
         }
     }
 
     void setSize(int _width, int _height){
         height = _height;
         width = _width;
-        map_data = new size_t*[width];
-        ids = new size_t*[width];
-        for(int i = 0; i < width; i ++){
-            map_data[i] = new size_t[height];
-            ids[i] = new size_t[height];
+        map_data = new size_t*[height];
+        ids = new size_t*[height];
+        for(int i = 0; i < height; i ++){
+            map_data[i] = new size_t[width];
+            ids[i] = new size_t[width];
         }
     }
 
@@ -45,7 +45,7 @@ public:
     }
 
     ~Map(){
-       for (int i = 0; i < width; i++) {
+       for (int i = 0; i < height; i++) {
             delete[] map_data[i];
             delete[] ids[i];
         }

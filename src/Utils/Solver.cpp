@@ -694,7 +694,8 @@ std::tuple<double, double, double, double, int, int, int, int> Solver::search(si
     std::vector<CostVector> hsolution_apex_costs;
     bool is_success = true;
     auto start_time = std::clock();
-
+    int turn_mode = vm["turn_mode"].as<int>();
+    int turn_cost = vm["turn_cost"].as<int>();
     int agent_num = vm["agent_num"].as<int>();
     double Heps_merge_max = vm["hem"].as<double>();
     double Heps_conflict_prune = vm["hep"].as<double>();
@@ -726,7 +727,7 @@ std::tuple<double, double, double, double, int, int, int, int> Solver::search(si
         single_run_map(graph_size, edges, start_end.at(i).first, start_end.at(i).second, output, 
             algorithm, l_ms, logger, Leps_merge, Leps_prune, time_limit, root_node->indiv_paths_list.at(i), 
             root_node->indiv_apex_costs.at(i), root_node->indiv_real_costs.at(i), 
-            root_node->vertex_constraints.at(i), root_node->edge_constraints.at(i), cat, root_node->conflict_num);
+            root_node->vertex_constraints.at(i), root_node->edge_constraints.at(i), cat, root_node->conflict_num, turn_mode, turn_cost);
     }
     auto t4 = std::chrono::high_resolution_clock::now(); // for timing.
     auto duration_t = std::chrono::duration_cast<std::chrono::microseconds>(t4 - _t3);
@@ -783,7 +784,8 @@ std::tuple<double, double, double, double, int, int, int, int> Solver::search(si
 
         //  Dom Prune
         if(algorithm == "Apex"){
-            DomPrune(hsolution_costs, node->joint_path_list, Heps_conflict_prune, DomPruneNum);
+            double _Heps_conflict_prune = Heps_conflict_prune >= 0.00001 ? Heps_conflict_prune : 0.00001;
+            DomPrune(hsolution_costs, node->joint_path_list, _Heps_conflict_prune, DomPruneNum);
         }else{
             double _eps = eps >= 0.00001 ? eps : 0.00001;
             DomPrune(hsolution_costs, node->joint_path_list, _eps, DomPruneNum);
@@ -843,7 +845,7 @@ std::tuple<double, double, double, double, int, int, int, int> Solver::search(si
                 single_run_map(graph_size, edges, start_end.at(agent_id).first, start_end.at(agent_id).second, 
                     output, algorithm, l_ms, logger, Leps_merge, Leps_prune, time_limit, new_node->indiv_paths_list.at(agent_id), 
                     new_node->indiv_apex_costs.at(agent_id), new_node->indiv_real_costs.at(agent_id), 
-                    new_node->vertex_constraints[agent_id], new_node->edge_constraints[agent_id], _cat, new_node->conflict_num); 
+                    new_node->vertex_constraints[agent_id], new_node->edge_constraints[agent_id], _cat, new_node->conflict_num, turn_mode, turn_cost); 
                 auto _t_1_ = std::chrono::high_resolution_clock::now();
                 auto duration0__ = std::chrono::duration_cast<std::chrono::microseconds>(_t_1_ - _t_0_);
                 LowLevelTime += ((double)duration0__.count())/1000000.0;
@@ -894,7 +896,7 @@ std::tuple<double, double, double, double, int, int, int, int> Solver::search(si
                 single_run_map(graph_size, edges, start_end.at(agent_id).first, start_end.at(agent_id).second, 
                     output, algorithm, l_ms, logger, Leps_merge, Leps_prune, time_limit, new_node->indiv_paths_list.at(agent_id), 
                     new_node->indiv_apex_costs.at(agent_id), new_node->indiv_real_costs.at(agent_id), 
-                    new_node->vertex_constraints[agent_id], new_node->edge_constraints[agent_id], _cat, new_node->conflict_num); 
+                    new_node->vertex_constraints[agent_id], new_node->edge_constraints[agent_id], _cat, new_node->conflict_num, turn_mode, turn_cost); 
                 auto _t_1_ = std::chrono::high_resolution_clock::now();
                 auto duration0__ = std::chrono::duration_cast<std::chrono::microseconds>(_t_1_ - _t_0_);
                 LowLevelTime += ((double)duration0__.count())/1000000.0;
@@ -961,52 +963,7 @@ std::tuple<double, double, double, double, int, int, int, int> Solver::search(si
             hsolution_costs.push_back(ele.second);
         }
     }
-    // std::sort(hsolution_costs.begin(), hsolution_costs.end());
-    // std::sort(hsolution_apex_costs.begin(), hsolution_apex_costs.end());
-
-    // auto solution_costs = hsolution_costs;
-    // hsolution_costs.clear();
-    // for(auto ele: solution_costs){
-    //     bool is_dominated = false;
-    //     for(auto ele1: hsolution_costs){
-    //         bool is_dominated_by_this_one = true;
-    //         for(int i = 0; i < ele1.size(); i++){
-    //             if(ele1.at(i) > ele.at(i)){
-    //                 is_dominated_by_this_one = false;
-    //                 break;
-    //             }
-    //         }
-    //         if(is_dominated_by_this_one){
-    //             is_dominated = true;
-    //             break;
-    //         }
-    //     }
-    //     if(!is_dominated){
-    //         hsolution_costs.push_back(ele);
-    //     }
-    // }
-    // auto solution_apex_costs = hsolution_apex_costs;
-    // hsolution_apex_costs.clear();
-    // for(auto ele: solution_apex_costs){
-    //     bool is_dominated = false;
-    //     for(auto ele1: hsolution_apex_costs){
-    //         bool is_dominated_by_this_one = true;
-    //         for(int i = 0; i < ele1.size(); i++){
-    //             if(ele1.at(i) > ele.at(i)){
-    //                 is_dominated_by_this_one = false;
-    //                 break;
-    //             }
-    //         }
-    //         if(is_dominated_by_this_one){
-    //             is_dominated = true;
-    //             break;
-    //         }
-    //     }
-    //     if(!is_dominated){
-    //         hsolution_apex_costs.push_back(ele);
-    //     }
-    // }
-
+    
     if(is_success){
         Output << "SUCCESS" << std::endl;
     }else{

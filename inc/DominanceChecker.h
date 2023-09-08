@@ -57,10 +57,11 @@ class LocalCheckLinear: public DominanceChecker {
 
 protected:
     std::vector<std::unordered_map<size_t, std::list<ApexPathPairPtr>>> min_g2;
+    bool if_turn;
 
 public:
 
-    LocalCheckLinear(EPS eps, size_t graph_size):DominanceChecker(eps), min_g2(graph_size + 1) {};
+    LocalCheckLinear(EPS eps, size_t graph_size, bool if_turn):DominanceChecker(eps), min_g2(graph_size + 1), if_turn(if_turn) {};
 
     virtual bool is_dominated(ApexPathPairPtr node);
 

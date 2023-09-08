@@ -5,8 +5,8 @@
 
 #include "BOAStar.h"
 
-BOAStar::BOAStar(const AdjacencyMatrix &adj_matrix, Pair<double> eps, const LoggerPtr logger) :
-    AbstractSolver(adj_matrix, {eps[0], eps[1]}, logger) {}
+BOAStar::BOAStar(const AdjacencyMatrix &adj_matrix, Pair<double> eps, int turn_mode, int turn_cost, const LoggerPtr logger) :
+    AbstractSolver(adj_matrix, {eps[0], eps[1]}, turn_mode, turn_cost, logger) {}
 
 
 void BOAStar::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, CostSet& solution_real_costs, 
@@ -25,7 +25,7 @@ void BOAStar::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, Co
     std::vector<NodePtr> closed;
 
     // Vector to hold mininum cost of 2nd criteria per node
-    std::vector<std::unordered_map<size_t, size_t>> min_g2(this->adj_matrix.size());
+    std::vector<std::unordered_map<size_t, std::vector<std::pair<size_t, size_t>>>> min_g2(this->adj_matrix.size());    // unordered_map<time, vector<pair<parent_id, cost>>>
 
     size_t  min_g2_target = UINT64_MAX;
 
@@ -34,10 +34,12 @@ void BOAStar::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, Co
     std::vector<NodePtr> open;
     std::make_heap(open.begin(), open.end(), more_than);
 
-    node = std::make_shared<Node>(source, std::vector<size_t>(2,0), heuristic(source));
+    bool if_turn = turn_mode == -1 ? false : true;
+    node = std::make_shared<Node>(source, std::vector<size_t>(2,0), heuristic(source, -1, if_turn));
     open.push_back(node);
     std::push_heap(open.begin(), open.end(), more_than);
-
+            extern std::unordered_map<size_t, std::vector<int>> id2coord;
+            
     while (open.empty() == false) {
         if ((std::clock() - start_time)/CLOCKS_PER_SEC > time_limit){
 
@@ -53,54 +55,100 @@ void BOAStar::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, Co
 
         // Dominance check
         if(node->id == target){
-            // std::cout << "node->f[1] = " << node->f[1] << std::endl;
-            // getchar();
             if((1+this->eps_prune[1])*node->f[1] >= min_g2_target){
                 continue;
             }else{
                 min_g2_target = node->g[1];
-                // std::cout << "min_g2_target = " << min_g2_target <<std::endl;
-                // getchar();
             }
         }else{
-            if ((((1+this->eps_prune[1])*node->f[1]) >= min_g2_target) || 
-            min_g2[node->id].count(node->t) && (node->g[1] >= min_g2[node->id][node->t])) {
+            bool if_dominated = false;
+            bool exist_same_parent_pair = false;
+            if(((1+this->eps_prune[1])*node->f[1]) >= min_g2_target){
+                if_dominated = true;
+            }else if(min_g2[node->id].count(node->t)){
+                for(auto& ele: min_g2[node->id][node->t]){
+                    if(if_turn && !(ele.first == -1 && node->parent == nullptr)){
+                        if(ele.first != node->parent->id){
+                            continue;
+                        }
+                    }
+                    exist_same_parent_pair = true;
+                    if(node->g[1] >= ele.second){
+                        if_dominated = true;
+                        break;
+                    }else{
+                        ele.second = node->g[1];
+                    }
+                }
+            }
+            if (if_dominated) {
                 closed.push_back(node);
                 continue;
-            }else{
-                min_g2[node->id][node->t] = node->g[1];
+            }
+            if(!exist_same_parent_pair){
+                if(node->parent == nullptr){
+                    min_g2[node->id][node->t].push_back(std::make_pair(-1, node->g.at(1)));
+                }else{
+                    min_g2[node->id][node->t].push_back(std::make_pair(node->parent->id, node->g.at(1)));
+                }
             }
         }
         
         num_expansion += 1;
-
 
         if (node->id == target) {
             solutions.push_back(node);
             log_solution(node);
             continue;
         }
-
         // Check to which neighbors we should extend the paths
         const std::vector<Edge> &outgoing_edges = adj_matrix[node->id];
         for(auto p_edge = outgoing_edges.begin(); p_edge != outgoing_edges.end(); p_edge++) {
             size_t next_id = p_edge->target;
             std::vector<size_t> next_g = {node->g[0]+p_edge->cost[0], node->g[1]+p_edge->cost[1]};
-            auto next_h = heuristic(next_id);
+            if(if_turn){
+                if(node->parent == nullptr){
+                    if(next_id != node->id){
+                        next_g.at(turn_mode) += turn_cost;
+                    }
+                }else{
+                    int x0 = id2coord[node->parent->id].at(0);
+                    int y0 = id2coord[node->parent->id].at(1);
+                    int x1 = id2coord[node->id].at(0);
+                    int y1 = id2coord[node->id].at(1);
+                    int x2 = id2coord[next_id].at(0);
+                    int y2 = id2coord[next_id].at(1);
+                    if(x1-x0 != x2-x1 || y1-y0 != y2-y1){
+                        next_g.at(turn_mode) += turn_cost;
+                    }
+                }
+            }
+            auto next_h = heuristic(next_id, node->id, if_turn);
             size_t next_t = node->t + 1;
 
             // Dominance check
             if(next_id == target){
-                // std::cout << next_g[1]+next_h[1] << std::endl;
-                // std::cout << next_t;
-                // getchar();
                 if ((1+this->eps_prune[1])*(next_g[1]+next_h[1]) >= min_g2_target){
                     continue;
                 }
             }else{
-                if ((((1+this->eps_prune[1])*(next_g[1]+next_h[1])) >= min_g2_target) || 
-                min_g2[next_id].count(next_t) && (next_g[1] >= min_g2[next_id][next_t])) {
-                    closed.push_back(node);
+                bool if_dominated = false;
+                if(((1+this->eps_prune[1])*(next_g[1]+next_h[1])) >= min_g2_target){
+                    if_dominated = true;
+                }else if(min_g2[next_id].count(next_t)){
+                    for(auto& ele: min_g2[next_id][next_t]){
+                        if(if_turn && !(ele.first == -1 && node == nullptr)){
+                            if(ele.first != node->id){
+                                continue;
+                            }
+                        }
+                        if(next_g.at(1) >= ele.second){
+                            if_dominated = true;
+                            break;
+                        }
+                    }
+                }
+                if (if_dominated) {
                     continue;
                 }
             }
@@ -115,12 +163,20 @@ void BOAStar::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, Co
             if(is_constraint(next, vertex_constraints, edge_constraints)){
                 continue;
             }
-
             open.push_back(next);
             std::push_heap(open.begin(), open.end(), more_than);
 
             closed.push_back(node);
         }
+            // for(auto ele: open){
+            //     if(ele->parent != nullptr && ele->parent->parent != nullptr){
+            //         std::cout << id2coord[ele->parent->parent->id].at(0) << ", " << id2coord[ele->parent->parent->id].at(1) << "    "
+            //         << id2coord[ele->parent->id].at(0) << ", " << id2coord[ele->parent->id].at(1) << "    ";
+            //     }
+            //     std::cout << id2coord[ele->id].at(0) << ", " << id2coord[ele->id].at(1) << "  " << ele->g.at(0) << ", " << ele->g.at(1) << std::endl;
+            //     getchar();
+            // }
+            // std::cout << "one time" << std::endl;   
     }
     // std::cout << "hreer";
     // getchar();
