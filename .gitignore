@@ -4,3 +4,5 @@ build/
 # make no sense to the project
 test.cpp    
 learn.md
+plot.py
+image_

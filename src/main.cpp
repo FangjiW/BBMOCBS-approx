@@ -22,6 +22,7 @@ using namespace std;
 
 std::unordered_map<size_t, std::vector<int>> id2coord;  // node_id to coordinate
 std::string map_name;
+std::ofstream output;
 
 int main(int argc, char** argv)
 {
@@ -32,7 +33,7 @@ po::options_description desc("Allowed options");
 desc.add_options()
     ("help", "produce help message")
     ("map,m", po::value<std::string>()->required(), "Map File")
-    ("cost,c", po::value<std::string>()->default_value(""), "Cost File")
+    ("cost,c", po::value<std::string>()->default_value("cost"), "Cost Directory")
     ("config", po::value<std::string>()->default_value(""), "Configure File")
     ("dim,d", po::value<int>()->default_value(2), "dimension of cost function")
     ("eps,e", po::value<double>()->default_value(0), "Approximate factor")
@@ -49,6 +50,11 @@ desc.add_options()
     ("cost_mode", po::value<std::string>()->required(), "cost mode")
     ("turn_mode", po::value<int>()->default_value(-1), "turn mode id")
     ("turn_cost", po::value<int>()->default_value(0), "turn cost")
+    ("solution_num,s", po::value<int>()->default_value(0), "number of solution")
+    ("mode", po::value<std::string>()->default_value("given_eps"), "solve mode")
+    ("CAT", po::value<std::string>()->default_value("true"), "if CAT")
+    ("eager", po::value<std::string>()->default_value("true"), "if eager")
+    ("unique_file", po::value<std::string>()->default_value("2"), "unique cost file")
 
     ("output,o", po::value<std::string>()->default_value("output.txt"), "Name of the output file")
     ("logging_file", po::value<std::string>()->default_value(""), "logging file" )
@@ -74,6 +80,15 @@ if(vm["algorithm"].as<std::string>() == "BOA" && vm["dim"].as<int>() > 2){
 }
 // MergeStrategy ms = DEFAULT_MERGE_STRATEGY;
 auto ms = MergeStrategy::RANDOM;
+if(vm["merge"].as<std::string>() == "slack"){
+    ms = MergeStrategy::MORE_SLACK;
+}
+if(vm["merge"].as<std::string>() == "NONE"){
+    ms = MergeStrategy::NONE;
+}
+if(vm["mode"].as<string>() == "smallest_eps" || vm["mode"].as<string>() == "diversity"){
+    ms = MergeStrategy::MORE_SLACK;
+}
 
 
 /*************************  Build  Map  ****************************/
@@ -88,15 +103,15 @@ p.cost_init(map, edges, vm["dim"].as<int>());
 
 map_name = vm["map"].as<std::string>();
 
-std::ofstream output;
 std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 std::time_t now_time_t = std::chrono::system_clock::to_time_t(now);
 char* time_str = std::ctime(&now_time_t);
 std::string cur_time(time_str);
-
+std::string if_CAT = vm["CAT"].as<std::string>() == "true" ? "" : "noCAT-";
+std::string if_eager = vm["eager"].as<std::string>() == "true" ? "" : "no_eager-";
 if(vm["algorithm"].as<std::string>() == "Apex"){
     output.open("../new_" + std::to_string(vm["dim"].as<int>()) + ".out/" + vm["map"].as<std::string>() + "/n=" 
-    + std::to_string(vm["agent_num"].as<int>()) + "/" + std::to_string(vm["hem"].as<double>()).substr(0, 5)
+    + std::to_string(vm["agent_num"].as<int>()) + "/" + if_CAT + if_eager + std::to_string(vm["hem"].as<double>()).substr(0, 5)
     + ", " + std::to_string(vm["hep"].as<double>()).substr(0, 5) + ", " + std::to_string(vm["lem"].as<double>()).substr(0, 5) 
     + ", " + std::to_string(vm["lep"].as<double>()).substr(0, 5) + "-" + vm["cost_mode"].as<string>() + "-" + cur_time);
 
@@ -110,7 +125,7 @@ if(vm["algorithm"].as<std::string>() == "Apex"){
 }else{
     output.open("../new_" + std::to_string(vm["dim"].as<int>()) + ".out/" + vm["map"].as<std::string>() + "/n=" 
     + std::to_string(vm["agent_num"].as<int>()) + "/" 
-    + vm["algorithm"].as<std::string>() + "-" + std::to_string(vm["eps"].as<double>()).substr(0, 5) + "-" + vm["cost_mode"].as<string>() + "-" + cur_time);
+    + if_eager + vm["algorithm"].as<std::string>() + "-" + std::to_string(vm["eps"].as<double>()).substr(0, 5) + "-" + vm["cost_mode"].as<string>() + "-" + cur_time);
     auto current_time = std::time(nullptr);
     output << std::ctime(&current_time) << std::endl;
     output << "Map: " << vm["map"].as<std::string>() << std::endl << vm["algorithm"].as<std::string>() << std::endl
@@ -132,16 +147,16 @@ int total_success_num = 0;
 double t_NonDomTime = 0, t_LowLevelTime = 0, t_TotalTime = 0, t_CATTime = 0, t_DomPruneNum = 0, t_constraint_num = 0, t_SolutionNum_before = 0, t_SolutionNum_after = 0;
 for(int i = 0; i < vm["dim"].as<int>(); i++){
     if(cost_mode.at(i) == 'd'){
-        p.read_cost("../dataset/" + vm["map"].as<std::string>() + "/cost/distance.cost", map, edges, i);
+        p.read_cost("../dataset/" + vm["map"].as<std::string>() + "/" + vm["cost"].as<string>() + "/distance.cost", map, edges, i);
     }else if(cost_mode.at(i) == 'u'){
-        p.read_cost("../dataset/" + vm["map"].as<std::string>() + "/cost/unique2.cost", map, edges, i);
+        p.read_cost("../dataset/" + vm["map"].as<std::string>() + "/" + vm["cost"].as<string>() + "/unique" + vm["unique_file"].as<string>() + ".cost", map, edges, i);
     }
 }
 
 while ((entry = readdir(dir)) != NULL) {
     if (entry->d_type == DT_REG) {
         scene_num ++;
-        // if(scene_num < 2){
+        // if(scene_num < 18){
         //     continue;
         // }
         if(scene_num > vm["r2"].as<int>()){
@@ -165,7 +180,7 @@ while ((entry = readdir(dir)) != NULL) {
             bool have_r = false;
             for(int j = 0; j < vm["dim"].as<int>(); j++){
                 if(cost_mode.at(j) == 'r'){
-                    p.read_cost("../dataset/" + vm["map"].as<std::string>() + "/cost/random-" + to_string(i+100*j) + ".cost", map, edges, j);
+                    p.read_cost("../dataset/" + vm["map"].as<std::string>() + "/" + vm["cost"].as<string>() + "/random-" + to_string(i+100*j) + ".cost", map, edges, j);
                     have_r = true;
                 }
             }
@@ -179,7 +194,7 @@ while ((entry = readdir(dir)) != NULL) {
                 output << std::endl << std::endl;
             }
 
-            auto one_data = solver.search(map.graph_size, edges, vm, start_end, ms, logger, hsolutions, hsolution_costs, output);
+            auto one_data = solver.search(map.graph_size, edges, vm, start_end, ms, logger, hsolutions, hsolution_costs);
             
             if (std::get<2>(one_data) > vm["cutoffTime"].as<int>()){
                 if(!have_r){

@@ -33,19 +33,11 @@ int main(){
         }
     }
 	input.close();
-	
-	// ofstream output("cost/unique3.cost");
-	// for(int j = 0; j < height; j++){
-	// 	for(int k = 0; k < width; k++){
-	// 		output << 3 << " ";
-	// 	}
-	// 	output << endl;
-	// }
 
 	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
 	std::default_random_engine generator(seed);
     std::uniform_int_distribution<int> distribution(1, 5);
-	for(int i = 0; i < 200; i++){
+	for(int i = 0; i < 300; i++){
 		ofstream output("cost/random-" + to_string(i+1) + ".cost");
 		for(int j = 0; j < height; j++){
 				for(int k = 0; k < width; k++){
@@ -54,34 +46,42 @@ int main(){
 				output << endl;
 		}			
 	} 
+	
+	ofstream output2("cost/unique2.cost");
+	for(int j = 0; j < height; j++){
+		for(int k = 0; k < width; k++){
+			output2 << 2 << " ";
+		}
+		output2 << endl;
+	}
 
-	ofstream output("cost/distance.cost");
+	ofstream output3("cost/distance.cost");
 	for(int j = 0; j < height; j++){
 		for(int k = 0; k < width; k ++){
 			if(map[j][k] == -1){
-				output << 0 << " ";
+				output3 << 0 << " ";
 				continue;
 			}
 			bool have_write = false;
 			for(int l = 0; l < 5; l++){
 				for(int t = 0; t <= l; t ++){
 					if(j-t >= 0 && k-(l-t) >= 0 && j-k < height && k-(l-t) < width && map[j-t][k-(l-t)] == -1){
-						output << 6-l << " ";
+						output3 << 6-l << " ";
 						have_write = true;
 						break;
 					}
 					if(j-t >= 0 && k+(l-t) >= 0 && j-k < height && k+(l-t) < width && map[j-t][k+(l-t)] == -1){
-						output << 6-l << " ";
+						output3 << 6-l << " ";
 						have_write = true;
 						break;
 					}
 					if(j+t >= 0 && k+(l-t) >= 0 && j+k < height && k+(l-t) < width && map[j+t][k+(l-t)] == -1){
-						output << 6-l << " ";
+						output3 << 6-l << " ";
 						have_write = true;
 						break;
 					}
 					if(j+t >= 0 && k-(l-t) >= 0 && j+k < height && k-(l-t) < width && map[j+t][k-(l-t)] == -1){
-						output << 6-l << " ";
+						output3 << 6-l << " ";
 						have_write = true;
 						break;
 					}
@@ -91,9 +91,9 @@ int main(){
 				}
 			}
 			if(!have_write){
-				output << 1 << " ";
+				output3 << 1 << " ";
 			}
 		}
-		output << std::endl;
+		output3 << std::endl;
 	}
 }

@@ -13,9 +13,9 @@ public:
     Solver(){};
 //  DomPrune
     //  for joint_path_list
-    bool DomPrune(std::vector<CostVector>& solution_costs, std::list<JointPathPair>& joint_path_list, double eps, int& DomPruneNum);
+    bool DomPrune(std::vector<CostVector>& solution_apexs, std::vector<CostVector>& solution_costs, std::list<JointPathPair>& joint_path_list, double eps, int& DomPruneNum);
     //  for single joint path
-    bool DomPrune(std::vector<CostVector>& solution_costs, CostVector& real_cost, double eps);
+    bool DomPrune(std::vector<CostVector>& solution_apex_costs, std::vector<CostVector>& solution_costs, CostVector& apex_cost, CostVector& real_cost);
 
 //  add constraint
     //  vertex constraint
@@ -37,5 +37,14 @@ public:
 
     std::tuple<double, double, double, double, int, int, int, int> search(size_t graph_size, std::vector<Edge>& edges, 
         boost::program_options::variables_map& vm, std::vector<std::pair<size_t, size_t>>& start_end, MergeStrategy& ms, LoggerPtr& logger, 
-        HSolutionID& hsolution_ids, std::vector<CostVector>& hsolution_costs, std::ofstream& Output);
+        HSolutionID& hsolution_ids, std::vector<CostVector>& hsolution_costs);
+
+// A*pex with dibersity
+    void NonDomJointPath(HighLevelNodePtr node, int solution_num);
+    void MergeBySmallestEps(std::list<JointPathTuple>& joint_path_vector, int solution_num, double max_eps=INT_MAX);
+    double CD(CostVector& a, CostVector& b, std::vector<double> box_len);
+    CostVector vector_min(CostVector& a, CostVector& b);
+    double calculate_eps(CostVector& a, CostVector& b);
+    void MergeBySmallestEps(std::vector<CostVector>& apex_cost, std::vector<CostVector>& real_cost, int solution_num, double max_eps=INT_MAX);
+    void MergeByDiv(std::vector<CostVector>& apex_cost, std::vector<CostVector>& real_cost, int solution_num, double max_eps=INT_MAX);
 };

@@ -11,22 +11,22 @@ std::string alg_variant = "";
 
 // Simple example to demonstarte the usage of the algorithm
 
-void single_run_map(size_t graph_size, AdjacencyMatrix& graph, AdjacencyMatrix&inv_graph, size_t source, 
-    size_t target, std::ofstream& output, std::string algorithm, MergeStrategy ms, LoggerPtr logger, 
+void single_run_map(size_t graph_size, AdjacencyMatrix& graph, Heuristic& heuristic, size_t source, 
+    size_t target, std::string algorithm, MergeStrategy ms, LoggerPtr logger, 
     double Leps_merge, double Leps_prune, unsigned int time_limit, PathSet& solution_ids, 
     CostSet& solution_apex_costs, CostSet& solution_real_costs, VertexConstraint& vertex_constraints, 
     EdgeConstraint& edge_constraints, CAT& cat, std::unordered_map<int, int>& conflict_num_map, int turn_mode, int turn_cost) {
     // Compute heuristic
     // std::cout << "Start Computing Heuristic" << std::endl;
 
-    ShortestPathHeuristic sp_heuristic(target, graph_size, inv_graph, vertex_constraints, edge_constraints, turn_mode, turn_cost);  // can run outside and only once
+    // ShortestPathHeuristic sp_heuristic(target, graph_size, inv_graph, turn_mode, turn_cost);  // can run outside and only once
     
     // sp_heuristic.set_all_to_zero();
     // std::cout << "Finish Computing Heuristic\n" << std::endl;
 
     // using std::placeholders::_1;
     // auto start_time = std::chrono::high_resolution_clock::now();    // record time
-    Heuristic heuristic = std::bind( &ShortestPathHeuristic::operator(), sp_heuristic, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    // Heuristic heuristic = std::bind( &ShortestPathHeuristic::operator(), sp_heuristic, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     // auto end_time = std::chrono::high_resolution_clock::now();
     
     // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
@@ -41,7 +41,7 @@ void single_run_map(size_t graph_size, AdjacencyMatrix& graph, AdjacencyMatrix&i
         // Pair<double> eps_pair({eps, eps});
         // solver = std::make_unique<PPA>(graph, eps_pair, logger);
     }else if (algorithm == "BOA"){
-        Pair<double> eps_pair({0, 0});
+        Pair<double> eps_pair({0.0, 0.0});
         solver = std::make_unique<BOAStar>(graph, eps_pair, turn_mode, turn_cost, logger);
     }else if (algorithm == "NAMOAdr"){
         EPS eps_vec (graph.get_num_of_objectives(), 0);
@@ -87,19 +87,17 @@ void single_run_map(size_t graph_size, AdjacencyMatrix& graph, AdjacencyMatrix&i
     // std::cout << "-----End Single Example-----" << std::endl;
 }
 
-void single_run_map(size_t graph_size, std::vector<Edge> & edges, size_t source, size_t target, 
-    std::string output_file, std::string algorithm, MergeStrategy ms, LoggerPtr logger, 
-    double Leps_merge, double Leps_prune, int time_limit, PathSet& solution_ids, CostSet& solution_apex_costs, 
-    CostSet& solution_real_costs, VertexConstraint& vertex_constraints, EdgeConstraint& edge_constraints, CAT& cat, 
-    std::unordered_map<int, int>& conflict_num_map, int turn_mode, int turn_cost) {
+// void single_run_map(size_t graph_size, AdjacencyMatrix& graph, Heuristic& heuristic, size_t source, size_t target, 
+//     std::string algorithm, MergeStrategy ms, LoggerPtr logger, 
+//     double Leps_merge, double Leps_prune, int time_limit, PathSet& solution_ids, CostSet& solution_apex_costs, 
+//     CostSet& solution_real_costs, VertexConstraint& vertex_constraints, EdgeConstraint& edge_constraints, CAT& cat, 
+//     std::unordered_map<int, int>& conflict_num_map, int turn_mode, int turn_cost) {
     
-    AdjacencyMatrix graph(graph_size, edges);   // can run outside and only once
-    AdjacencyMatrix inv_graph(graph_size, edges, true);
-    std::ofstream stats;
-    stats.open(output_path + output_file, std::fstream::app);
+//     // AdjacencyMatrix graph(graph_size, edges);   // can run outside and only once
+//     // AdjacencyMatrix inv_graph(graph_size, edges, true);
 
-    single_run_map(graph_size, graph, inv_graph, source, target, stats, algorithm, ms, logger, Leps_merge, Leps_prune, time_limit, solution_ids, solution_apex_costs, solution_real_costs, vertex_constraints, edge_constraints, cat, conflict_num_map, turn_mode, turn_cost);
- }
+//     single_run_map(graph_size, graph, heuristic, source, target, algorithm, ms, logger, Leps_merge, Leps_prune, time_limit, solution_ids, solution_apex_costs, solution_real_costs, vertex_constraints, edge_constraints, cat, conflict_num_map, turn_mode, turn_cost);
+//  }
 
 void run_query(size_t graph_size, std::vector<Edge> & edges, std::string query_file, std::string output_file, std::string algorithm, MergeStrategy ms, LoggerPtr logger, double eps, int time_limit, VertexConstraint& vertex_constraints) {
     // std::ofstream stats;

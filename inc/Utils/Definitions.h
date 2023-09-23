@@ -13,6 +13,7 @@
 #include <climits>
 #include <unordered_map>
 #include <list>
+#include <math.h>
 #include "boost/heap/pairing_heap.hpp"
 #include "boost/heap/priority_queue.hpp"
 
@@ -35,7 +36,7 @@ std::ostream& operator<<(std::ostream &stream, const Pair<T> pair) {
 }
 
 
-using Heuristic = std::function<std::vector<size_t>(size_t, size_t, bool)>;
+using Heuristic = std::function<std::vector<size_t>(size_t, size_t, bool)>;     // node_id, parent_id, if_turn
 
 // Structs and classes
 struct Edge {
@@ -99,8 +100,15 @@ struct Node {
         }
     };
 
-    Node(size_t id, std::vector<size_t> g, std::vector<size_t> h, size_t t, NodePtr parent=nullptr)
+    Node(size_t id, std::vector<size_t> g, std::vector<size_t> h, size_t t,  NodePtr parent=nullptr)
         : id(id), g(g), h(h), f(g.size()), parent(parent), t(t) {
+        for (int i = 0; i < g.size(); i++){
+            f[i] = g[i] + h[i];
+        }
+    };
+
+    Node(size_t id, std::vector<size_t> g, std::vector<size_t> h, size_t t, int conflict_num, NodePtr parent=nullptr)
+        : id(id), g(g), h(h), f(g.size()), parent(parent), t(t), conflict_num(conflict_num) {
         for (int i = 0; i < g.size(); i++){
             f[i] = g[i] + h[i];
         }
@@ -170,7 +178,7 @@ struct PathPair {
     friend std::ostream& operator<<(std::ostream &stream, const PathPair &pp);
 };
 
-enum MergeStrategy {SMALLER_G2, RANDOM, MORE_SLACK, SMALLER_G2_FIRST, REVERSE_LEX, LEAST_CONFLICT};
+enum MergeStrategy {SMALLER_G2, RANDOM, MORE_SLACK, SMALLER_G2_FIRST, REVERSE_LEX, LEAST_CONFLICT, NONE};
 
 struct ApexPathPair {
     size_t      id; // state of the node
@@ -178,12 +186,11 @@ struct ApexPathPair {
     NodePtr     path_node;
     NodePtr     parent;
     bool        is_active=true;
-    size_t      t;
 
     Heuristic& h;
 
     ApexPathPair(const NodePtr &apex, const NodePtr &path_node, Heuristic& h)
-        : apex(apex), path_node(path_node) , parent(path_node->parent), h(h), id(apex->id), t(t){};
+        : apex(apex), path_node(path_node) , parent(path_node->parent), h(h), id(apex->id){};
 
     ApexPathPair(const ApexPathPairPtr parent, const Edge& egde, int turn_mode, int turn_cost);
 
@@ -230,7 +237,7 @@ class HighLevelNode;
 using HighLevelNodePtr = std::shared_ptr<HighLevelNode>;
 using HSolutionID = std::vector<std::vector<std::vector<size_t>>>;
 using VertexConstraint = std::unordered_map<size_t, std::vector<size_t>>;   // (t, node)
-using EdgeConstraint = std::unordered_map<size_t, std::unordered_map<size_t, std::vector<size_t>>>; // (source, <t, target>);
+using EdgeConstraint = std::unordered_map<size_t, std::unordered_map<size_t, std::vector<size_t>>>; // (t, <source, <target>>);
 using CostVector = std::vector<size_t>;
 using PathSet = std::unordered_map<size_t, std::vector<size_t>>;
 using CostSet = std::unordered_map<size_t, std::vector<size_t>>;
@@ -276,8 +283,6 @@ public:
     // HighLevelNode(const HighLevelNode& node);
 };
 
-#endif //UTILS_DEFINITIONS_H
-
 inline bool same_orientation(NodePtr& ap1, NodePtr& ap2)
 {
     if(ap1->parent == nullptr && ap2->parent == nullptr){
@@ -291,3 +296,17 @@ inline bool same_orientation(NodePtr& ap1, NodePtr& ap2)
     }
     return false;
 }
+
+enum SolveMode {GIVEN_EPSILON, SMALLEST_EPS, DIVERSITY};    // SMALLEST_EPS and DIVERSITY are given solution number
+
+inline bool is_dominated(CostVector& a, CostVector& b, double eps=0)
+{
+    for(int i = 0; i < a.size(); i++){
+        if(a.at(i)*(1+eps) < b.at(i)){
+            return false;
+        }
+    }
+    return true;
+}
+
+#endif //UTILS_DEFINITIONS_H

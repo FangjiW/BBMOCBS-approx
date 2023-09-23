@@ -17,6 +17,7 @@ public:
 
 class SolutionCheck: public DominanceChecker {
     ApexPathPairPtr last_solution = nullptr;
+    std::list<ApexPathPairPtr> solutions;
 public:
 
     SolutionCheck(EPS eps):DominanceChecker(eps){};

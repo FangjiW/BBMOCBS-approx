@@ -12,11 +12,11 @@ if mm == 3:
     mymod = "DomPruneNum"
 
 myk = 1
-mycost = "unique-distance"
+mycost = "random-random"
 date = ""
-map = "random-64-64-20"
-if_turn = 5
-eps = 0.030
+map = "random-32-32-20"
+if_turn = 0
+eps = 0.050
 
 directory_path = "new_2.out/" + map
 

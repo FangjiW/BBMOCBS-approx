@@ -21,7 +21,7 @@ void ApexSearch::insert(ApexPathPairPtr &ap, APQueue &queue) {
         if ((*existing_ap)->is_active == false) {
             continue;
         }
-        if(ap->t != (*existing_ap)->t){
+        if(ap->path_node->t != (*existing_ap)->path_node->t){
             continue;
         }
         if(turn_mode != -1 && !same_orientation(ap->path_node, (*existing_ap)->path_node)){
@@ -73,7 +73,7 @@ void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs,
         unsigned int time_limit, CAT& cat, std::unordered_map<int, int>& conflict_num_map) 
 {   
     init_search();
-
+    auto _tt1 = std::chrono::high_resolution_clock::now();
     auto start_time = std::clock();
 
     // if (num_of_objectives == 2){
@@ -83,10 +83,8 @@ void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs,
     //     local_dom_checker = std::make_unique<LocalCheckLinear>(eps_merge, this->adj_matrix.size());
     //     solution_dom_checker = std::make_unique<SolutionCheckLinear>(eps_prune);
     // }
-    bool if_turn = false;
-    if(turn_mode != -1){
-        if_turn = true;
-    }
+    bool if_turn = turn_mode == -1 ? false : true;
+    
     local_dom_checker = std::make_unique<LocalCheckLinear>(eps_merge, this->adj_matrix.size(), if_turn);
     solution_dom_checker = std::make_unique<SolutionCheckLinear>(eps_prune);
 
@@ -102,11 +100,11 @@ void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs,
 
     // Vector to hold mininum cost of 2nd criteria per node
     // std::vector<size_t> min_g2(this->adj_matrix.size()+1, MAX_COST);
-    
+    // double time;
     // Init open heap
     APQueue open(this->adj_matrix.size()+1);
 
-    NodePtr source_node = std::make_shared<Node>(source, std::vector<size_t>(num_of_objectives, 0), heuristic(source, -1, if_turn), 0, nullptr);
+    NodePtr source_node = std::make_shared<Node>(source, std::vector<size_t>(num_of_objectives, 0), heuristic(source, -1, if_turn), 0, 0, nullptr);
     ap = std::make_shared<ApexPathPair>(source_node, source_node, heuristic);
     open.insert(ap);
 
@@ -129,9 +127,13 @@ void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs,
         }
 
         // Dominance check
+        // auto tt1 = std::chrono::high_resolution_clock::now();
         if (is_dominated(ap, target)){
             continue;
         }
+        // auto tt2 = std::chrono::high_resolution_clock::now();
+        // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(tt2-tt1);
+        // time += ((double)duration.count())/1000000.0;
 
         if(ap->id != target){
             //  min_g2[ap->id] = ap->bottom_right->g[1];
@@ -163,14 +165,12 @@ void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs,
             }
 
             // Dominance check
-            // if ((((1+this->eps[1])*(bottom_right_next_g[1]+next_h[1])) >= min_g2[target]) ||
-            //     (bottom_right_next_g[1] >= min_g2[next_id])) {
             if (is_dominated(next_ap, target)){
                 continue;
             }
 
             for(int ele: cat.at(next_ap->id)){
-                if(next_ap->t == ele){
+                if(next_ap->path_node->t == ele){
                     next_ap->path_node->conflict_num ++;
                 }
             }
@@ -182,22 +182,14 @@ void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs,
             this->insert(next_ap, open);
             // closed.push_back(pp);
         }
-        // auto _open = open;
-        // while(!_open.empty()){
-        //     auto ele = _open.pop();
-        //     extern std::unordered_map<size_t, std::vector<int>> id2coord;
-        //     if(ele->parent != nullptr && ele->parent->parent != nullptr){
-        //         std::cout << id2coord[ele->parent->parent->id].at(0) << ", " << id2coord[ele->parent->parent->id].at(1) << "    "
-        //          << id2coord[ele->parent->id].at(0) << ", " << id2coord[ele->parent->id].at(1) << "    ";
-        //     }
-        //     std::cout << id2coord[ele->id].at(0) << ", " << id2coord[ele->id].at(1) << "  " << ele->path_node->g.at(0) << ", " << ele->path_node->g.at(1) << std::endl;
-        //     getchar();
-        // }
-        // std::cout << "one time" << std::endl;
-        // next_ap = std::make_shared<ApexPathPair>(ap, Edge(ap->id, ap->id, std::vector<size_t>({0, 0})));    // remain place action
     }
 
     // Pair solutions is used only for logging, as we need both the solutions for testing reasons
+    // auto _tt2 = std::chrono::high_resolution_clock::now();
+    // auto durationtt = std::chrono::duration_cast<std::chrono::microseconds>(_tt2-_tt1);
+    // std::cout << num_expansion << std::endl;
+    // std::cout << ((double)durationtt.count())/1000000.0 << std::endl;
+
     solution_ids.clear();
     solution_apex_costs.clear();
     solution_real_costs.clear();

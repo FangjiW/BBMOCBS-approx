@@ -14,7 +14,7 @@ bool is_dominated_dr(NodePtr node, std::list<NodePtr>& list, EPS eps){
 
 void add_node_dr(NodePtr node, std::list<NodePtr>& list, bool if_turn){
     for (auto it = list.begin(); it != list.end(); ){
-        if(if_turn && !((*it)->parent == nullptr && node->parent == nullptr) && (node->parent == nullptr || (*it)->parent == nullptr || node->parent->id != (*it)->parent->id)){
+        if(if_turn && !same_orientation(node, *it)){
             it ++;
             continue;
         }
@@ -29,7 +29,7 @@ void add_node_dr(NodePtr node, std::list<NodePtr>& list, bool if_turn){
 
 bool is_dominated_dr(NodePtr node, std::list<NodePtr>& list, bool if_turn){
     for (auto& n: list){
-        if(if_turn && !(n->parent == nullptr && node->parent == nullptr) && (node->parent == nullptr || n->parent == nullptr || node->parent->id != n->parent->id)){
+        if(if_turn && !same_orientation(node, n)){
             continue;
         }
         if (is_dominated_dr(node, n)){
@@ -90,7 +90,7 @@ void NAMOAdr::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, Co
                 add_node_dr(node, closed_target, false);
             }
         }else{
-            if(closed[node->id].count(node->t) && is_dominated_dr(node, closed[node->id][node->t], if_turn)){
+            if((closed[node->id].count(node->t) && is_dominated_dr(node, closed[node->id][node->t], if_turn)) || is_dominated_dr(node, closed_target, eps_prune)){
                 continue;
             }else{
                 add_node_dr(node, closed[node->id][node->t], if_turn);
@@ -109,7 +109,7 @@ void NAMOAdr::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, Co
         for(auto p_edge = outgoing_edges.begin(); p_edge != outgoing_edges.end(); p_edge++) {
             size_t next_id = p_edge->target;
             // std::vector<size_t> next_g = {node->g[0]+p_edge->cost[0], node->g[1]+p_edge->cost[1]};
-            std::vector<size_t> next_g(node->g.size());
+            std::vector<size_t> next_g(node->g.size(), 0);
             for (size_t i = 0; i < next_g.size(); i++){
                 next_g[i] = node->g[i] + p_edge->cost[i];
             }
@@ -145,16 +145,12 @@ void NAMOAdr::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, Co
                     continue;
                 }
             }else{
-                if(closed[next->id].count(next->t) && is_dominated_dr(next, closed[next->id][next->t], if_turn)){
+                if((closed[next->id].count(next->t) && is_dominated_dr(next, closed[next->id][next->t], if_turn)) || is_dominated_dr(next, closed_target, eps_prune)){
                     continue;
                 }
             }
-
-            // If not dominated create node and push to queue
-            // Creation is defered after dominance check as it is
-            // relatively computational heavy and should be avoided if possible
+            
             open.insert(next);
-
         }
     }
 

@@ -53,7 +53,7 @@
 //         (min_g2[pp->id] != nullptr && pp->bottom_right->g[1] >= min_g2[pp->id]->bottom_right->g[1]);
 // }
 
-// void PPA::operator()(size_t source, size_t target, Heuristic &heuristic, SolutionSet &solutions, unsigned int time_limit) {
+// void PPA::operator()(int source, int target, Heuristic &heuristic, SolutionSet &solutions, unsigned int time_limit) {
 //     init_search();
 //     this->target = target;
 //     this->start_logging(source, target);
@@ -74,7 +74,7 @@
 //     // Init open heap
 //     PPQueue open(this->adj_matrix.size()+1);
 
-//     NodePtr source_node = std::make_shared<Node>(source, std::vector<size_t>({0,0}), heuristic(source));
+//     NodePtr source_node = std::make_shared<Node>(source, std::vector<int>({0,0}), heuristic(source));
 //     pp = std::make_shared<PathPair>(source_node, source_node);
 //     open.insert(pp);
 
@@ -120,10 +120,10 @@
 //         const std::vector<Edge> &outgoing_edges = adj_matrix[pp->id];
 //         for(auto p_edge = outgoing_edges.begin(); p_edge != outgoing_edges.end(); p_edge++) {
 //             // Prepare extension of path pair
-//             size_t next_id = p_edge->target;
-//             std::vector<size_t> top_left_next_g = {pp->top_left->g[0]+p_edge->cost[0],
+//             int next_id = p_edge->target;
+//             std::vector<int> top_left_next_g = {pp->top_left->g[0]+p_edge->cost[0],
 //                                             pp->top_left->g[1]+p_edge->cost[1]};
-//             std::vector<size_t> bottom_right_next_g = {pp->bottom_right->g[0]+p_edge->cost[0],
+//             std::vector<int> bottom_right_next_g = {pp->bottom_right->g[0]+p_edge->cost[0],
 //                                                 pp->bottom_right->g[1]+p_edge->cost[1]};
 //             auto next_h = heuristic(next_id);
 

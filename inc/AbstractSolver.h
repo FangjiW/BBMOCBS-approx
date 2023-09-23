@@ -45,7 +45,7 @@ inline bool is_constraint(NodePtr node, VertexConstraint& vertex_constraints, Ed
 {
     if(vertex_constraints.count(node->t)){
         for(int i = 0; i < vertex_constraints[node->t].size(); i ++){
-            if(node->id == vertex_constraints[node->t][i]){
+            if(node->id == vertex_constraints[node->t].at(i)){
                 return true;
             }
         }
@@ -53,10 +53,10 @@ inline bool is_constraint(NodePtr node, VertexConstraint& vertex_constraints, Ed
     if(node->parent == nullptr){
         return false;
     }
-    if(edge_constraints.count(node->parent->id)){
-        if(edge_constraints[node->parent->id].count(node->parent->t)){
-            for(int i = 0; i < edge_constraints[node->parent->id][node->parent->t].size(); i++){
-                if(node->id == edge_constraints[node->parent->id][node->parent->t].at(i)){
+    if(edge_constraints.count(node->t-1)){
+        if(edge_constraints[node->t-1].count(node->parent->id)){
+            for(int i = 0; i < edge_constraints[node->t-1][node->parent->id].size(); i++){
+                if(node->id == edge_constraints[node->t-1][node->parent->id].at(i)){
                     return true;
                 }
             }

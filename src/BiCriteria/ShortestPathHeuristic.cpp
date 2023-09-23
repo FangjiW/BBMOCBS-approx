@@ -7,7 +7,7 @@
 
 extern std::unordered_map<size_t, std::vector<int>> id2coord;
 
-ShortestPathHeuristic::ShortestPathHeuristic(size_t source, size_t graph_size, const AdjacencyMatrix &adj_matrix, VertexConstraint& vertex_constraints, EdgeConstraint& edge_constraints, int turn_mode, int turn_cost)
+ShortestPathHeuristic::ShortestPathHeuristic(size_t source, size_t graph_size, const AdjacencyMatrix &adj_matrix, int turn_mode, int turn_cost)
     : source(source), all_nodes(graph_size+1) {
     size_t num_of_objectives = adj_matrix.get_num_of_objectives();
     size_t i = 0;
@@ -17,7 +17,7 @@ ShortestPathHeuristic::ShortestPathHeuristic(size_t source, size_t graph_size, c
 
     for (int j=0; j < num_of_objectives; j ++){
         bool if_turn = j == turn_mode ? true : false;
-        compute(j, adj_matrix, vertex_constraints, edge_constraints, if_turn, turn_cost);
+        compute(j, adj_matrix, if_turn, turn_cost);
     }
 }
 
@@ -41,7 +41,7 @@ std::vector<size_t> ShortestPathHeuristic::operator()(size_t node_id, size_t par
 
 
 // Implements Dijkstra shortest path algorithm per cost_idx cost function
-void ShortestPathHeuristic::compute(size_t cost_idx, const AdjacencyMatrix &adj_matrix, VertexConstraint& vertex_constraints, EdgeConstraint& edge_constraints, bool if_turn, int turn_cost) {
+void ShortestPathHeuristic::compute(size_t cost_idx, const AdjacencyMatrix &adj_matrix, bool if_turn, int turn_cost) {
     // Init all heuristics to MAX_COST
     // for (auto node_iter = this->all_nodes.begin(); node_iter != this->all_nodes.end(); node_iter++) {
     //     (*node_iter)->h[cost_idx] = MAX_COST;
