@@ -5,4 +5,5 @@ build/
 test.cpp    
 learn.md
 plot.py
-image_
+image_/
+image/
