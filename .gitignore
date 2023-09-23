@@ -3,7 +3,9 @@ build/
 
 # make no sense to the project
 test.cpp    
+test
 learn.md
 plot.py
 image_/
 image/
+*.py
