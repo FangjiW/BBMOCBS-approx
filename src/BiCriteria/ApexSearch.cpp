@@ -6,6 +6,7 @@
 
 #include "ApexSearch.h"
 
+extern bool if_stop;
 
 ApexSearch::ApexSearch(const AdjacencyMatrix &adj_matrix, EPS eps_merge, EPS eps_prune, int turn_mode, int turn_cost, const LoggerPtr logger) :
     AbstractSolver(adj_matrix, eps_merge, eps_prune, turn_mode, turn_cost, logger),
@@ -16,12 +17,9 @@ ApexSearch::ApexSearch(const AdjacencyMatrix &adj_matrix, EPS eps_merge, EPS eps
 
 
 void ApexSearch::insert(ApexPathPairPtr &ap, APQueue &queue) {
-    std::list<ApexPathPairPtr> &relevant_aps = queue.get_open(ap->id);
+    std::list<ApexPathPairPtr> &relevant_aps = queue.get_open(ap->id, ap->path_node->t);
     for (auto existing_ap = relevant_aps.begin(); existing_ap != relevant_aps.end(); ++existing_ap) {
         if ((*existing_ap)->is_active == false) {
-            continue;
-        }
-        if(ap->path_node->t != (*existing_ap)->path_node->t){
             continue;
         }
         if(turn_mode != -1 && !same_orientation(ap->path_node, (*existing_ap)->path_node)){
@@ -30,8 +28,7 @@ void ApexSearch::insert(ApexPathPairPtr &ap, APQueue &queue) {
         if (ap->update_nodes_by_merge_if_bounded(*existing_ap, this->eps_merge, ms) == true) {
             // pp and existing_pp were merged successfuly into pp
             // std::cout << "merge!" << std::endl;
-            if ((ap-> apex!= (*existing_ap)->apex) ||
-                (ap-> path_node!= (*existing_ap)->path_node)) {
+            if ((ap-> apex!= (*existing_ap)->apex) || (ap-> path_node!= (*existing_ap)->path_node)) {
                 // If merged_pp == existing_pp we avoid inserting it to keep the queue as small as possible.
                 // existing_pp is deactivated and not removed to avoid searching through the heap
                 // (it will be removed on pop and ignored)
@@ -49,6 +46,11 @@ void ApexSearch::insert(ApexPathPairPtr &ap, APQueue &queue) {
 void ApexSearch::merge_to_solutions(const ApexPathPairPtr &ap, ApexPathSolutionSet &solutions) {
     for (auto existing_solution = solutions.begin(); existing_solution != solutions.end(); ++existing_solution) {
         if ((*existing_solution)->update_nodes_by_merge_if_bounded(ap, this->eps_prune, ms) == true) {
+            if(if_stop){
+                std::cout << "AFTER MERGE" << (*existing_solution)->path_node->f.at(0) << ", " << (*existing_solution)->path_node->f.at(1) << (*existing_solution)->path_node->conflict_num << std::endl;
+                getchar();
+            }
+            solution_dom_checker->add_node(*existing_solution);
             return;
         }
     }
@@ -72,17 +74,12 @@ void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs,
         size_t source, size_t target, Heuristic &heuristic, VertexConstraint& vertex_constraints, EdgeConstraint& edge_constraints,
         unsigned int time_limit, CAT& cat, std::unordered_map<int, int>& conflict_num_map) 
 {   
+    double time = 0;
+    double time2 = 0;
+    double time3 = 0;
     init_search();
-    auto _tt1 = std::chrono::high_resolution_clock::now();
     auto start_time = std::clock();
 
-    // if (num_of_objectives == 2){
-    //     local_dom_checker = std::make_unique<LocalCheck>(eps_merge, this->adj_matrix.size());
-    //     solution_dom_checker = std::make_unique<SolutionCheck>(eps_prune);
-    // }else{
-    //     local_dom_checker = std::make_unique<LocalCheckLinear>(eps_merge, this->adj_matrix.size());
-    //     solution_dom_checker = std::make_unique<SolutionCheckLinear>(eps_prune);
-    // }
     bool if_turn = turn_mode == -1 ? false : true;
     
     local_dom_checker = std::make_unique<LocalCheckLinear>(eps_merge, this->adj_matrix.size(), if_turn);
@@ -95,12 +92,6 @@ void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs,
     ApexPathPairPtr   ap;
     ApexPathPairPtr   next_ap;
 
-    // Saving all the unused PathPairPtrs in a vector improves performace for some reason
-    // std::vector<ApexPathPairPtr> closed;
-
-    // Vector to hold mininum cost of 2nd criteria per node
-    // std::vector<size_t> min_g2(this->adj_matrix.size()+1, MAX_COST);
-    // double time;
     // Init open heap
     APQueue open(this->adj_matrix.size()+1);
 
@@ -119,7 +110,15 @@ void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs,
         }
         // Pop min from queue and process
         ap = open.pop();
-        num_generation +=1;
+
+        if(if_stop){
+            std::cout << "ID = " << ap->id << "   " << "f = " << ap->apex->f.at(0) << "," << ap->apex->f.at(1) << "   " << source << " " << target << "   " << ap->path_node->conflict_num
+             << std::endl;
+            for(auto solution : ap_solutions){
+                std::cout << solution->path_node->f.at(0) << ", " << solution->path_node->f.at(1) << "    " << solution->path_node->conflict_num << std::endl;
+            }
+        }
+        // num_generation +=1;
 
         // Optimization: PathPairs are being deactivated instead of being removed so we skip them.
         if (ap->is_active == false) {
@@ -127,14 +126,10 @@ void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs,
         }
 
         // Dominance check
-        // auto tt1 = std::chrono::high_resolution_clock::now();
         if (is_dominated(ap, target)){
             continue;
         }
-        // auto tt2 = std::chrono::high_resolution_clock::now();
-        // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(tt2-tt1);
-        // time += ((double)duration.count())/1000000.0;
-
+        
         if(ap->id != target){
             //  min_g2[ap->id] = ap->bottom_right->g[1];
             local_dom_checker->add_node(ap);
@@ -153,8 +148,8 @@ void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs,
         const std::vector<Edge> &outgoing_edges = adj_matrix[ap->id];
         for(auto p_edge = outgoing_edges.begin(); p_edge != outgoing_edges.end(); p_edge++) {
             // Prepare extension of path pair
-
             next_ap = std::make_shared<ApexPathPair>(ap, *p_edge, turn_mode, turn_cost);
+
             if(ap->apex->f.at(0) > next_ap->apex->f.at(0)){
                 std::cout << "wrong"; getchar();
             }
@@ -185,10 +180,7 @@ void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs,
     }
 
     // Pair solutions is used only for logging, as we need both the solutions for testing reasons
-    // auto _tt2 = std::chrono::high_resolution_clock::now();
-    // auto durationtt = std::chrono::duration_cast<std::chrono::microseconds>(_tt2-_tt1);
-    // std::cout << num_expansion << std::endl;
-    // std::cout << ((double)durationtt.count())/1000000.0 << std::endl;
+    std::cout << "Node Expansion = " << num_expansion << std::endl;
 
     solution_ids.clear();
     solution_apex_costs.clear();

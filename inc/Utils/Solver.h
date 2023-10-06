@@ -25,9 +25,11 @@ public:
 
 // A*pex version
     void NonDomJointPath(HighLevelNodePtr node, MergeStrategy ms, double eps, int agent_id=-1);
-    void NonDomVec(std::list<JointPathTuple>& joint_path_vector, MergeStrategy ms, double eps);
+    void NonDomVec(std::list<std::pair<CostVector, int>>& apex_cost_combos, std::vector<CostVector>& real_costs_vector, std::vector<std::vector<size_t>>& ids_vector, 
+        std::vector<int>& conflict_nums_vector, MergeStrategy ms, double eps);
     //  return if can merge
-    bool HighLevelMerge(JointPathTuple& existing_path, JointPathTuple& new_path, MergeStrategy ms, double eps);
+    bool HighLevelMerge(std::pair<CostVector, int>& existing_path, std::pair<CostVector, int>& new_path, CostVector& real_cost1, 
+        CostVector& real_cost2, std::vector<size_t>& id1, std::vector<size_t>& id2, int conflict_num1, int conflict_num2, MergeStrategy ms, double eps);
 
 //  BOA* and NAMOA* version
     void NonDomJointPath(HighLevelNodePtr node);
@@ -40,7 +42,7 @@ public:
         HSolutionID& hsolution_ids, std::vector<CostVector>& hsolution_costs);
 
 // A*pex with dibersity
-    void NonDomJointPath(HighLevelNodePtr node, int solution_num);
+    void NonDomJointPath(HighLevelNodePtr node, int solution_num){};
     void MergeBySmallestEps(std::list<JointPathTuple>& joint_path_vector, int solution_num, double max_eps=INT_MAX);
     double CD(CostVector& a, CostVector& b, std::vector<double> box_len);
     CostVector vector_min(CostVector& a, CostVector& b);

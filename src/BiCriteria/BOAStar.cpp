@@ -167,19 +167,9 @@ void BOAStar::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, Co
             std::push_heap(open.begin(), open.end(), more_than);
 
             closed.push_back(node);
-        }
-            // for(auto ele: open){
-            //     if(ele->parent != nullptr && ele->parent->parent != nullptr){
-            //         std::cout << id2coord[ele->parent->parent->id].at(0) << ", " << id2coord[ele->parent->parent->id].at(1) << "    "
-            //         << id2coord[ele->parent->id].at(0) << ", " << id2coord[ele->parent->id].at(1) << "    ";
-            //     }
-            //     std::cout << id2coord[ele->id].at(0) << ", " << id2coord[ele->id].at(1) << "  " << ele->g.at(0) << ", " << ele->g.at(1) << std::endl;
-            //     getchar();
-            // }
-            // std::cout << "one time" << std::endl;   
+        }  
     }
-    // std::cout << "hreer";
-    // getchar();
+    std::cout << "Node Expansion = " << num_expansion << std::endl;
 
     for(size_t i = 0; i < solutions.size(); i++){
         NodePtr pointer = solutions.at(i);

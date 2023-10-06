@@ -29,8 +29,16 @@ std::tuple<int, int, std::vector<size_t>, size_t> ConflictChecker::is_conflict(J
                     }
                 }
             }
+        }
+    }
+    
+    //  edge check
+    for(int i = 0; i < agent_num; i ++){
+        for(int j = i+1; j < agent_num; j++){
+            size_t id_i = joint_path.second.at(i), id_j = joint_path.second.at(j);
+            std::vector<size_t> node_ids_i = indiv_paths_list.at(i)[id_i];
+            std::vector<size_t> node_ids_j = indiv_paths_list.at(j)[id_j];
 
-        //  edge check
             for(size_t k = 0; k < node_ids_i.size()-1 && k < node_ids_j.size()-1; k ++){
                 if(node_ids_i.at(k) == node_ids_j.at(k+1) && node_ids_i.at(k+1) == node_ids_j.at(k)){
                     return std::make_tuple(i, j, std::vector<size_t>({node_ids_i.at(k), node_ids_j.at(k)}), k);

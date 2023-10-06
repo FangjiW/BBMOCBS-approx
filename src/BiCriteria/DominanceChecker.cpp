@@ -1,5 +1,6 @@
 #include "DominanceChecker.h"
 
+extern bool if_stop;
 
 bool SolutionCheck::is_dominated(ApexPathPairPtr node){
     if (last_solution == nullptr){
@@ -70,7 +71,7 @@ bool LocalCheckLinear::is_dominated(ApexPathPairPtr node){
 void LocalCheckLinear::add_node(ApexPathPairPtr ap){
     auto id = ap->id;
     if(!min_g2[id].count(ap->path_node->t)){
-        min_g2[ap->id][ap->path_node->t].push_front(ap);
+        min_g2[ap->id].insert(std::make_pair(ap->path_node->t, std::list<ApexPathPairPtr>({ap})));
         return;
     }
     for (auto it = min_g2[id][ap->path_node->t].begin(); it != min_g2[id][ap->path_node->t].end(); ){
@@ -91,19 +92,44 @@ void LocalCheckLinear::add_node(ApexPathPairPtr ap){
 }
 
 bool SolutionCheckLinear::is_dominated(ApexPathPairPtr node){
+    if(if_stop){
+        std::cout << "about node" << node->apex->f.at(0) << "," << node->apex->f.at(1) << std::endl;
+    }
+    
     for (auto& ap: solutions){
+        if(if_stop){
+            std::cout << ap->path_node->f.at(0) << "," << ap->path_node->f.at(1) << "   ";
+        }
         if(node->path_node->conflict_num < ap->path_node->conflict_num){
             continue;
         }
         if (ap->update_apex_by_merge_if_bounded(node->apex, eps)){
+            if(if_stop){
+                std::cout << "is_dominated";
+                std::cout << std::endl;
+            }
+            
             return true;
         }
     }
+    if(if_stop){
+        std::cout << "isnot";
+        std::cout << std::endl;
+    }
+    
     return false;
 }
 
 void SolutionCheckLinear::add_node(ApexPathPairPtr ap){
+    if(if_stop){
+        std::cout << "ADD NODE " << ap->path_node->f.at(0) << ", " << ap->path_node->f.at(1) << ap->path_node->conflict_num << std::endl;
+        getchar();
+    }
     for (auto it = solutions.begin(); it != solutions.end(); ){
+        if(if_stop){
+        std::cout << (*it)->path_node->f.at(0) << (*it)->path_node->f.at(1) << (*it)->path_node->conflict_num << std::endl; getchar();
+
+        }
         if (ap->path_node->conflict_num <= (*it)->path_node->conflict_num && is_dominated_dr((*it)->path_node, ap->path_node)){
             it = solutions.erase(it);
         } else {

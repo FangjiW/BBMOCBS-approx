@@ -4,7 +4,7 @@
 
 template<class Node, class more_than_full_cost>
 MapQueue<Node, more_than_full_cost>::MapQueue(size_t graph_size)
-    : open_map(graph_size, std::list<Node>()) {
+    : open_map(graph_size) {
 
     std::make_heap(this->heap.begin(), this->heap.end(), this->more_than);
 }
@@ -26,12 +26,8 @@ Node MapQueue<Node, more_than_full_cost>::pop() {
     Node pp = this->heap.back();
     this->heap.pop_back();
 
-    if(typeid(pp).name() == typeid(HighLevelNodePtr).name()){
-        return pp;
-    }
-
     // Remove from open map
-    std::list<Node> &relevant_pps = this->open_map[pp->id];
+    std::list<Node> &relevant_pps = this->open_map[pp->id][pp->t];
     for (auto iter = relevant_pps.begin(); iter != relevant_pps.end(); ++iter) {
         if (pp == *iter) {
             relevant_pps.erase(iter);
@@ -48,21 +44,39 @@ void MapQueue<Node, more_than_full_cost>::insert(Node &pp) {
     this->heap.push_back(pp);
     std::push_heap(this->heap.begin(), this->heap.end(), this->more_than);
 
-    if(typeid(pp).name() == typeid(HighLevelNodePtr).name()){
-        return;
-    }
     // Insert to open map
-    this->open_map[pp->id].push_back(pp);
+    if(!open_map.at(pp->id).count(pp->t)){
+        open_map.at(pp->id).insert(std::make_pair(pp->t, std::list<Node>()));
+    }
+    this->open_map[pp->id][pp->t].push_back(pp);
 }
 
 template<class Node, class more_than_full_cost>
-std::list<Node> &MapQueue<Node, more_than_full_cost>::get_open(size_t id) {
-    return this->open_map[id];
+std::list<Node> &MapQueue<Node, more_than_full_cost>::get_open(size_t id, int t) {
+    if(!open_map.at(id).count(t)){
+        open_map.at(id).insert(std::make_pair(t, std::list<Node>()));
+    }
+    return this->open_map[id][t];
 }
 
 
 template class MapQueue<ApexPathPairPtr, ApexPathPair::more_than_full_cost>;
-template class MapQueue<PathPairPtr, PathPair::more_than_full_cost>;
+// template class MapQueue<PathPairPtr, PathPair::more_than_full_cost>;
 template class MapQueue<NodePtr, Node::more_than_full_cost>;
 
-template class MapQueue<HighLevelNodePtr, HighLevelNode::more_than_full_cost>;
+
+
+
+HighLevelNodePtr HLQueue::pop()
+{
+    std::pop_heap(this->heap.begin(), this->heap.end(), HLmore_than);
+    HighLevelNodePtr node = this->heap.back();
+    this->heap.pop_back();
+    return node;
+}
+
+void HLQueue::insert(HighLevelNodePtr& node)
+{
+    this->heap.push_back(node);
+    std::push_heap(this->heap.begin(), this->heap.end(), HLmore_than);
+}

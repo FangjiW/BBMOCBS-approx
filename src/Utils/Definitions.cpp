@@ -143,192 +143,192 @@ std::ostream& operator<<(std::ostream &stream, const Node &node) {
     return stream;
 }
 
-bool PathPair::update_nodes_by_merge_if_bounded(const PathPairPtr &other, const Pair<double> eps) {
-    // Returns true on sucessful merge and false if it failure
-    if (this->id != other->id) {
-        return false;
-    }
+// bool PathPair::update_nodes_by_merge_if_bounded(const PathPairPtr &other, const Pair<double> eps) {
+//     // Returns true on sucessful merge and false if it failure
+//     if (this->id != other->id) {
+//         return false;
+//     }
 
-    NodePtr new_top_left;
-    NodePtr new_bottom_right;
+//     NodePtr new_top_left;
+//     NodePtr new_bottom_right;
 
-    // Pick node with min cost1 (min cost2 if equal)
-    if ((this->top_left->f[0] < other->top_left->f[0]) ||
-        ((this->top_left->f[0] == other->top_left->f[0]) && (this->top_left->f[1] < other->top_left->f[1]))) {
-        new_top_left = this->top_left;
-    } else {
-        new_top_left = other->top_left;
-    }
+//     // Pick node with min cost1 (min cost2 if equal)
+//     if ((this->top_left->f[0] < other->top_left->f[0]) ||
+//         ((this->top_left->f[0] == other->top_left->f[0]) && (this->top_left->f[1] < other->top_left->f[1]))) {
+//         new_top_left = this->top_left;
+//     } else {
+//         new_top_left = other->top_left;
+//     }
 
-    // Pick node with min cost2 (min cost1 if equal)
-    if ((this->bottom_right->f[1] < other->bottom_right->f[1]) ||
-        ((this->bottom_right->f[1] == other->bottom_right->f[1]) && (this->bottom_right->f[0] < other->bottom_right->f[0]))) {
-        new_bottom_right = this->bottom_right;
-    } else {
-        new_bottom_right = other->bottom_right;
-    }
+//     // Pick node with min cost2 (min cost1 if equal)
+//     if ((this->bottom_right->f[1] < other->bottom_right->f[1]) ||
+//         ((this->bottom_right->f[1] == other->bottom_right->f[1]) && (this->bottom_right->f[0] < other->bottom_right->f[0]))) {
+//         new_bottom_right = this->bottom_right;
+//     } else {
+//         new_bottom_right = other->bottom_right;
+//     }
 
-    // Check if path pair is bounded after merge - if not the merge is illegal
-    if ((((1+eps[0])*new_top_left->g[0]) < new_bottom_right->g[0]) ||
-        (((1+eps[1])*new_bottom_right->g[1]) < new_top_left->g[1])) {
-        return false;
-    }
+//     // Check if path pair is bounded after merge - if not the merge is illegal
+//     if ((((1+eps[0])*new_top_left->g[0]) < new_bottom_right->g[0]) ||
+//         (((1+eps[1])*new_bottom_right->g[1]) < new_top_left->g[1])) {
+//         return false;
+//     }
 
-    this->top_left = new_top_left;
-    this->bottom_right = new_bottom_right;
-    return true;
-}
-
-
-bool PathPair::update_nodes_by_merge_if_bounded_keep_track(const PathPairPtr &other, const Pair<double> eps, std::list<NodePtr> & pruned_list) {
-    // Returns true on sucessful merge and false if it failure
-    if (this->id != other->id) {
-        return false;
-    }
-
-    NodePtr new_top_left;
-    NodePtr new_bottom_right;
-    NodePtr pruned_top_left;
-    NodePtr pruned_bottom_right;
-
-    // Pick node with min cost1 (min cost2 if equal)
-    if ((this->top_left->f[0] < other->top_left->f[0]) ||
-        ((this->top_left->f[0] == other->top_left->f[0]) && (this->top_left->f[1] < other->top_left->f[1]))) {
-        new_top_left = this->top_left;
-        pruned_top_left = other->top_left;
-    } else {
-        new_top_left = other->top_left;
-        pruned_top_left = this->top_left;
-    }
-
-    // Pick node with min cost2 (min cost1 if equal)
-    if ((this->bottom_right->f[1] < other->bottom_right->f[1]) ||
-        ((this->bottom_right->f[1] == other->bottom_right->f[1]) && (this->bottom_right->f[0] < other->bottom_right->f[0]))) {
-        new_bottom_right = this->bottom_right;
-        pruned_bottom_right = other->bottom_right;
-    } else {
-        new_bottom_right = other->bottom_right;
-        pruned_bottom_right = this->bottom_right;
-    }
-
-    // Check if path pair is bounded after merge - if not the merge is illegal
-    if ((((1+eps[0])*new_top_left->g[0]) < new_bottom_right->g[0]) ||
-        (((1+eps[1])*new_bottom_right->g[1]) < new_top_left->g[1])) {
-        return false;
-    }
-
-    this->top_left = new_top_left;
-    this->bottom_right = new_bottom_right;
-
-    // move_pruned_nodes(this, other.get());
-    if (!is_bounded(new_top_left, pruned_top_left) && !is_bounded(new_bottom_right, pruned_top_left)){
-      pruned_list.push_back(pruned_top_left);
-    }
-
-    if (!is_bounded(new_top_left, pruned_bottom_right) && !is_bounded(new_bottom_right, pruned_bottom_right)){
-      pruned_list.push_back(pruned_bottom_right);
-    }
-
-    return true;
-}
-
-bool PathPair::if_merge_bounded(const PathPairPtr &other, const Pair<double> eps)  const {
-    // Returns true on sucessful merge and false if it failure
-    if (this->id != other->id) {
-        return false;
-    }
-
-    NodePtr new_top_left;
-    NodePtr new_bottom_right;
-
-    // Pick node with min cost1 (min cost2 if equal)
-    if ((this->top_left->f[0] < other->top_left->f[0]) ||
-        ((this->top_left->f[0] == other->top_left->f[0]) && (this->top_left->f[1] < other->top_left->f[1]))) {
-        new_top_left = this->top_left;
-    } else {
-        new_top_left = other->top_left;
-    }
-
-    // Pick node with min cost2 (min cost1 if equal)
-    if ((this->bottom_right->f[1] < other->bottom_right->f[1]) ||
-        ((this->bottom_right->f[1] == other->bottom_right->f[1]) && (this->bottom_right->f[0] < other->bottom_right->f[0]))) {
-        new_bottom_right = this->bottom_right;
-    } else {
-        new_bottom_right = other->bottom_right;
-    }
-
-    // Check if path pair is bounded after merge - if not the merge is illegal
-    if ((((1+eps[0])*new_top_left->g[0]) < new_bottom_right->g[0]) ||
-        (((1+eps[1])*new_bottom_right->g[1]) < new_top_left->g[1])) {
-        return false;
-    }
-
-    return true;
-}
+//     this->top_left = new_top_left;
+//     this->bottom_right = new_bottom_right;
+//     return true;
+// }
 
 
-bool PathPair::update_nodes_by_merge_if_bounded2(const PathPairPtr &other, const Pair<double> eps) {
-    // Returns true on sucessful merge and false if it failure
-    if (this->id != other->id) {
-        return false;
-    }
+// bool PathPair::update_nodes_by_merge_if_bounded_keep_track(const PathPairPtr &other, const Pair<double> eps, std::list<NodePtr> & pruned_list) {
+//     // Returns true on sucessful merge and false if it failure
+//     if (this->id != other->id) {
+//         return false;
+//     }
 
-    NodePtr new_top_left;
-    NodePtr new_bottom_right;
+//     NodePtr new_top_left;
+//     NodePtr new_bottom_right;
+//     NodePtr pruned_top_left;
+//     NodePtr pruned_bottom_right;
 
-    // Pick node with min cost1 (min cost2 if equal)
-    if ((this->top_left->f[0] < other->top_left->f[0]) ||
-        ((this->top_left->f[0] == other->top_left->f[0]) && (this->top_left->f[1] < other->top_left->f[1]))) {
-        new_top_left = this->top_left;
-    } else {
-        new_top_left = other->top_left;
-    }
+//     // Pick node with min cost1 (min cost2 if equal)
+//     if ((this->top_left->f[0] < other->top_left->f[0]) ||
+//         ((this->top_left->f[0] == other->top_left->f[0]) && (this->top_left->f[1] < other->top_left->f[1]))) {
+//         new_top_left = this->top_left;
+//         pruned_top_left = other->top_left;
+//     } else {
+//         new_top_left = other->top_left;
+//         pruned_top_left = this->top_left;
+//     }
 
-    // Pick node with min cost2 (min cost1 if equal)
-    if ((this->bottom_right->f[1] < other->bottom_right->f[1]) ||
-        ((this->bottom_right->f[1] == other->bottom_right->f[1]) && (this->bottom_right->f[0] < other->bottom_right->f[0]))) {
-        new_bottom_right = this->bottom_right;
-    } else {
-        new_bottom_right = other->bottom_right;
-    }
+//     // Pick node with min cost2 (min cost1 if equal)
+//     if ((this->bottom_right->f[1] < other->bottom_right->f[1]) ||
+//         ((this->bottom_right->f[1] == other->bottom_right->f[1]) && (this->bottom_right->f[0] < other->bottom_right->f[0]))) {
+//         new_bottom_right = this->bottom_right;
+//         pruned_bottom_right = other->bottom_right;
+//     } else {
+//         new_bottom_right = other->bottom_right;
+//         pruned_bottom_right = this->bottom_right;
+//     }
 
-    // Check if path pair is bounded after merge - if not the merge is illegal
-    if ((1+eps[0])*new_top_left->f[0] < new_bottom_right->f[0]){
-        return false;
-    }
+//     // Check if path pair is bounded after merge - if not the merge is illegal
+//     if ((((1+eps[0])*new_top_left->g[0]) < new_bottom_right->g[0]) ||
+//         (((1+eps[1])*new_bottom_right->g[1]) < new_top_left->g[1])) {
+//         return false;
+//     }
 
-    this->top_left = new_top_left;
-    this->bottom_right = new_bottom_right;
-    return true;
-}
+//     this->top_left = new_top_left;
+//     this->bottom_right = new_bottom_right;
+
+//     // move_pruned_nodes(this, other.get());
+//     if (!is_bounded(new_top_left, pruned_top_left) && !is_bounded(new_bottom_right, pruned_top_left)){
+//       pruned_list.push_back(pruned_top_left);
+//     }
+
+//     if (!is_bounded(new_top_left, pruned_bottom_right) && !is_bounded(new_bottom_right, pruned_bottom_right)){
+//       pruned_list.push_back(pruned_bottom_right);
+//     }
+
+//     return true;
+// }
+
+// bool PathPair::if_merge_bounded(const PathPairPtr &other, const Pair<double> eps)  const {
+//     // Returns true on sucessful merge and false if it failure
+//     if (this->id != other->id) {
+//         return false;
+//     }
+
+//     NodePtr new_top_left;
+//     NodePtr new_bottom_right;
+
+//     // Pick node with min cost1 (min cost2 if equal)
+//     if ((this->top_left->f[0] < other->top_left->f[0]) ||
+//         ((this->top_left->f[0] == other->top_left->f[0]) && (this->top_left->f[1] < other->top_left->f[1]))) {
+//         new_top_left = this->top_left;
+//     } else {
+//         new_top_left = other->top_left;
+//     }
+
+//     // Pick node with min cost2 (min cost1 if equal)
+//     if ((this->bottom_right->f[1] < other->bottom_right->f[1]) ||
+//         ((this->bottom_right->f[1] == other->bottom_right->f[1]) && (this->bottom_right->f[0] < other->bottom_right->f[0]))) {
+//         new_bottom_right = this->bottom_right;
+//     } else {
+//         new_bottom_right = other->bottom_right;
+//     }
+
+//     // Check if path pair is bounded after merge - if not the merge is illegal
+//     if ((((1+eps[0])*new_top_left->g[0]) < new_bottom_right->g[0]) ||
+//         (((1+eps[1])*new_bottom_right->g[1]) < new_top_left->g[1])) {
+//         return false;
+//     }
+
+//     return true;
+// }
 
 
-bool PathPair::more_than_full_cost::operator()(const PathPairPtr &a, const PathPairPtr &b) const {
-    if (a->top_left->f[0] != b->top_left->f[0]) {
-        return (a->top_left->f[0] > b->top_left->f[0]);
-    } else {
-        return (a->bottom_right->f[1] > b->bottom_right->f[1]);
-    }
-}
+// bool PathPair::update_nodes_by_merge_if_bounded2(const PathPairPtr &other, const Pair<double> eps) {
+//     // Returns true on sucessful merge and false if it failure
+//     if (this->id != other->id) {
+//         return false;
+//     }
 
-std::ostream& operator<<(std::ostream &stream, const PathPair &pp) {
-    // Printed in JSON format
-    stream << "{" << pp.top_left << ", " << pp.bottom_right << "}";
-    return stream;
-}
+//     NodePtr new_top_left;
+//     NodePtr new_bottom_right;
 
-Interval::Interval(const NodePtr top_left, const NodePtr bottom_right, std::shared_ptr<std::list<NodePtr>> to_expand): top_left(top_left), bottom_right(bottom_right), to_expand(to_expand){
-  eps = 0;
-  //this->to_expand.reserve(to_expand.size());
-  for (auto& node: *to_expand){
-    eps = std::max(eps, std::min( ((double)top_left->f[1]) / node->f[1] - 1, ((double)bottom_right->f[0])/node->f[0] - 1  ));
-  }
-}
+//     // Pick node with min cost1 (min cost2 if equal)
+//     if ((this->top_left->f[0] < other->top_left->f[0]) ||
+//         ((this->top_left->f[0] == other->top_left->f[0]) && (this->top_left->f[1] < other->top_left->f[1]))) {
+//         new_top_left = this->top_left;
+//     } else {
+//         new_top_left = other->top_left;
+//     }
 
-std::ostream& operator<<(std::ostream& os, const Interval& interval){
-  os << "Top left: " << *interval.top_left  << ", Bottom right: " << *interval.bottom_right << ", #nodes: " << interval.to_expand->size();
-  return os;
-}
+//     // Pick node with min cost2 (min cost1 if equal)
+//     if ((this->bottom_right->f[1] < other->bottom_right->f[1]) ||
+//         ((this->bottom_right->f[1] == other->bottom_right->f[1]) && (this->bottom_right->f[0] < other->bottom_right->f[0]))) {
+//         new_bottom_right = this->bottom_right;
+//     } else {
+//         new_bottom_right = other->bottom_right;
+//     }
+
+//     // Check if path pair is bounded after merge - if not the merge is illegal
+//     if ((1+eps[0])*new_top_left->f[0] < new_bottom_right->f[0]){
+//         return false;
+//     }
+
+//     this->top_left = new_top_left;
+//     this->bottom_right = new_bottom_right;
+//     return true;
+// }
+
+
+// bool PathPair::more_than_full_cost::operator()(const PathPairPtr &a, const PathPairPtr &b) const {
+//     if (a->top_left->f[0] != b->top_left->f[0]) {
+//         return (a->top_left->f[0] > b->top_left->f[0]);
+//     } else {
+//         return (a->bottom_right->f[1] > b->bottom_right->f[1]);
+//     }
+// }
+
+// std::ostream& operator<<(std::ostream &stream, const PathPair &pp) {
+//     // Printed in JSON format
+//     stream << "{" << pp.top_left << ", " << pp.bottom_right << "}";
+//     return stream;
+// }
+
+// Interval::Interval(const NodePtr top_left, const NodePtr bottom_right, std::shared_ptr<std::list<NodePtr>> to_expand): top_left(top_left), bottom_right(bottom_right), to_expand(to_expand){
+//   eps = 0;
+//   //this->to_expand.reserve(to_expand.size());
+//   for (auto& node: *to_expand){
+//     eps = std::max(eps, std::min( ((double)top_left->f[1]) / node->f[1] - 1, ((double)bottom_right->f[0])/node->f[0] - 1  ));
+//   }
+// }
+
+// std::ostream& operator<<(std::ostream& os, const Interval& interval){
+//   os << "Top left: " << *interval.top_left  << ", Bottom right: " << *interval.bottom_right << ", #nodes: " << interval.to_expand->size();
+//   return os;
+// }
 
 
 /************************N E W**************************/

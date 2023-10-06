@@ -12,7 +12,7 @@ private:
     std::vector<Node>                heap;
     more_than_full_cost           more_than;
 
-    std::vector<std::list<Node>>   open_map;
+    std::vector<std::unordered_map<int, std::list<Node>>>   open_map;
 
 public:
     MapQueue(){}
@@ -21,14 +21,40 @@ public:
     // Node top();
     Node pop();
     void insert(Node &pp);
-    std::list<Node> &get_open(size_t id);
+    std::list<Node> &get_open(size_t id, int t);
     size_t size(){
         return heap.size();
     }
 };
 
 using APQueue = MapQueue<ApexPathPairPtr, ApexPathPair::more_than_full_cost>;
-using PPQueue = MapQueue<PathPairPtr, PathPair::more_than_full_cost>;
+// using PPQueue = MapQueue<PathPairPtr, PathPair::more_than_full_cost>;
 using NodeQueue = MapQueue<NodePtr, Node::more_than_full_cost>;
 
-using HLQueue = MapQueue<HighLevelNodePtr, HighLevelNode::more_than_full_cost>;
+
+
+class HLQueue
+{
+private:
+    std::vector<HighLevelNodePtr>      heap;
+
+public:
+    HLQueue(){};
+    bool empty(){
+        return heap.empty();
+    }
+    HighLevelNodePtr pop();
+    void insert(HighLevelNodePtr& node);
+    size_t size(){
+        return heap.size();
+    }
+};
+
+inline bool HLmore_than(HighLevelNodePtr a, HighLevelNodePtr b){
+    for(size_t i = 0; i < a->rep_apex_cost.size(); i ++){
+        if(a->rep_apex_cost.at(i) != b->rep_apex_cost.at(i)){
+            return a->rep_apex_cost.at(i) > b->rep_apex_cost.at(i);
+        }
+    }
+    return false;
+}

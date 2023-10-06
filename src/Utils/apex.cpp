@@ -1,6 +1,8 @@
 #include "Utils/Definitions.h"
 #include <random>
 
+extern std::unordered_map<size_t, std::vector<int>> id2coord;
+
 // return true if node dom ape x
 bool is_dominated_dr(NodePtr apex, NodePtr node){
   for (int i = 1; i < apex->f.size(); i ++ ){
@@ -65,7 +67,6 @@ ApexPathPair::ApexPathPair(const ApexPathPairPtr parent, const Edge&  edge, int 
 
   bool if_turn = turn_mode == -1 ? false : true;
 
-  extern std::unordered_map<size_t, std::vector<int>> id2coord;
   if(if_turn){
     if(parent->path_node->parent == nullptr){
       if(next_id != parent->id){
@@ -90,7 +91,8 @@ ApexPathPair::ApexPathPair(const ApexPathPairPtr parent, const Edge&  edge, int 
   this->id = next_id;
   auto new_h = h(next_id, parent->id, if_turn);
   this->apex = std::make_shared<Node>(next_id, new_apex_g, new_h);
-  this->path_node = std::make_shared<Node>(next_id, new_g, new_h, parent->path_node->t+1, parent->path_node->conflict_num, parent->path_node);
+  this->path_node = std::make_shared<Node>(next_id, new_g, new_h, parent->t+1, parent->path_node->conflict_num, parent->path_node);
+  this->t = parent->t + 1;
 }
 
 
@@ -178,18 +180,12 @@ bool ApexPathPair::update_nodes_by_merge_if_bounded(const ApexPathPairPtr &other
     if(this->path_node->conflict_num < other->path_node->conflict_num){
       if (is_bounded(new_apex, this->path_node, eps)){
         new_path_node = this->path_node;
-      }else if (is_bounded(new_apex, other->path_node, eps)){
-        return false;
-        new_path_node = other->path_node;
       }else{
         return false;
       }
     }else if(this->path_node->conflict_num > other->path_node->conflict_num){
       if (is_bounded(new_apex, other->path_node, eps)){
         new_path_node = other->path_node;
-      }else if (is_bounded(new_apex, this->path_node, eps)){
-        return false;
-        new_path_node = this->path_node;
       }else{
         return false;
       }
@@ -209,6 +205,7 @@ bool ApexPathPair::update_nodes_by_merge_if_bounded(const ApexPathPairPtr &other
   this->apex = new_apex;
   this->path_node = new_path_node;
   this->parent = new_path_node->parent;
+  this->t = new_path_node->t;
 
   return true;
 }

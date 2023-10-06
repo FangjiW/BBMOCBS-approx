@@ -45,8 +45,8 @@ desc.add_options()
     ("merge", po::value<std::string>()->default_value(""), "strategy for merging apex node pair: SMALLER_G2, RANDOM or MORE_SLACK")
     ("algorithm,a", po::value<std::string>()->default_value("Apex"), "low-level solvers (BOA, PPA or Apex search)")
     ("cutoffTime,t", po::value<int>()->default_value(300), "cutoff time (seconds)")
-    ("r1", po::value<int>()->default_value(4), "total runing times per scen")
-    ("r2", po::value<int>()->default_value(8), "total scen")
+    ("r1", po::value<int>()->default_value(1), "total runing times per scen")
+    ("r2", po::value<int>()->default_value(25), "total scen")
     ("cost_mode", po::value<std::string>()->required(), "cost mode")
     ("turn_mode", po::value<int>()->default_value(-1), "turn mode id")
     ("turn_cost", po::value<int>()->default_value(0), "turn cost")
@@ -55,6 +55,7 @@ desc.add_options()
     ("CAT", po::value<std::string>()->default_value("true"), "if CAT")
     ("eager", po::value<std::string>()->default_value("true"), "if eager")
     ("unique_file", po::value<std::string>()->default_value("2"), "unique cost file")
+    ("start_scene", po::value<int>()->default_value(0), "start scene number")
 
     ("output,o", po::value<std::string>()->default_value("output.txt"), "Name of the output file")
     ("logging_file", po::value<std::string>()->default_value(""), "logging file" )
@@ -144,7 +145,7 @@ dir = opendir(directoryPath.c_str());
 int scene_num = 0;
 int total_num = 0;
 int total_success_num = 0;
-double t_NonDomTime = 0, t_LowLevelTime = 0, t_TotalTime = 0, t_CATTime = 0, t_DomPruneNum = 0, t_constraint_num = 0, t_SolutionNum_before = 0, t_SolutionNum_after = 0;
+double t_NonDomTime = 0, t_LowLevelTime = 0, t_TotalTime = 0, t_EagerTime = 0, t_DomPruneNum = 0, t_constraint_num = 0, t_SolutionNum_before = 0, t_SolutionNum_after = 0;
 for(int i = 0; i < vm["dim"].as<int>(); i++){
     if(cost_mode.at(i) == 'd'){
         p.read_cost("../dataset/" + vm["map"].as<std::string>() + "/" + vm["cost"].as<string>() + "/distance.cost", map, edges, i);
@@ -156,9 +157,9 @@ for(int i = 0; i < vm["dim"].as<int>(); i++){
 while ((entry = readdir(dir)) != NULL) {
     if (entry->d_type == DT_REG) {
         scene_num ++;
-        // if(scene_num < 18){
-        //     continue;
-        // }
+        if(scene_num < vm["start_scene"].as<int>()){
+            continue;
+        }
         if(scene_num > vm["r2"].as<int>()){
             break;
         }
@@ -209,12 +210,12 @@ while ((entry = readdir(dir)) != NULL) {
                 break;
             }
         }
-        double NonDomTime = 0, LowLevelTime = 0, TotalTime = 0, CATTime = 0, DomPruneNum = 0, constraint_num = 0, SolutionNum_before = 0, SolutionNum_after = 0;
+        double NonDomTime = 0, LowLevelTime = 0, TotalTime = 0, EagerTime = 0, DomPruneNum = 0, constraint_num = 0, SolutionNum_before = 0, SolutionNum_after = 0;
         for(int i = 0; i < temp.size(); i++){
             NonDomTime += std::get<0>(temp.at(i))/(double)success_num;
             LowLevelTime += std::get<1>(temp.at(i))/(double)success_num;
             TotalTime += std::get<2>(temp.at(i))/(double)success_num;
-            CATTime += std::get<3>(temp.at(i))/(double)success_num;
+            EagerTime += std::get<3>(temp.at(i))/(double)success_num;
             DomPruneNum += std::get<4>(temp.at(i))/(double)success_num;
             constraint_num += std::get<5>(temp.at(i))/(double)success_num;
             SolutionNum_before += std::get<6>(temp.at(i))/(double)success_num;
@@ -223,7 +224,7 @@ while ((entry = readdir(dir)) != NULL) {
             t_NonDomTime += std::get<0>(temp.at(i));
             t_LowLevelTime += std::get<1>(temp.at(i));
             t_TotalTime += std::get<2>(temp.at(i));
-            t_CATTime += std::get<3>(temp.at(i));
+            t_EagerTime += std::get<3>(temp.at(i));
             t_DomPruneNum += std::get<4>(temp.at(i));
             t_constraint_num += std::get<5>(temp.at(i));
             t_SolutionNum_before += std::get<6>(temp.at(i));
@@ -233,7 +234,7 @@ while ((entry = readdir(dir)) != NULL) {
         output << "NonDomTime = " << NonDomTime << std::endl;
         output << "LowLevelTime = " << LowLevelTime << std::endl;
         output << "Total Time = " << TotalTime << std::endl;
-        output << "CAT Time = " << CATTime << std::endl;
+        output << "Eager Time = " << EagerTime << std::endl;
         output << "DomPruneNum/NodeExpandNum = " << DomPruneNum << "/" << constraint_num << std::endl;
         output << "SolutionNum = " << SolutionNum_before << "/" << SolutionNum_after << std::endl;
         output << std::endl << std::endl;
@@ -244,7 +245,7 @@ output << "AVERAGE :" << std::endl;
 output << "NonDomTime = " << t_NonDomTime/(double)total_success_num << std::endl;
 output << "LowLevelTime = " << t_LowLevelTime/(double)total_success_num << std::endl;
 output << "Total Time = " << t_TotalTime/(double)total_success_num << std::endl;
-output << "CAT Time = " << t_CATTime/(double)total_success_num << std::endl;
+output << "Eager Time = " << t_EagerTime/(double)total_success_num << std::endl;
 output << "DomPruneNum/NodeExpandNum = " << t_DomPruneNum/(double)total_success_num << "/" << t_constraint_num/(double)total_success_num << std::endl;
 output << "SolutionNum = " << t_SolutionNum_before/(double)total_success_num << "/" << t_SolutionNum_after/(double)total_success_num << std::endl;
 output << "Success Rate = " << total_success_num << "/" << total_num << " = " << (double)total_success_num/total_num;
