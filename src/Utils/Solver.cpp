@@ -59,56 +59,6 @@ void Solver::add_constraint(std::vector<EdgeConstraint>& edge_constraints, size_
     edge_constraints.at(agent_id)[time][source].push_back(target);
 }
 
-// bool Solver::DomPrune(std::vector<CostVector>& solution_apexs, std::vector<CostVector>& solution_costs, std::list<JointPathPair>& joint_path_list, double eps, int& DomPruneNum)
-// {
-//     int obj_num = joint_path_list.front().first.size();
-//     int agent_num = joint_path_list.front().second.size();
-//     bool is_prune = false;
-//     for (auto iter = joint_path_list.begin(); iter != joint_path_list.end(); ) {        
-//         bool is_dominated = false;
-//         for (int j = 0; j < solution_costs.size(); j++) {
-//             bool is_dominated_by_this_one = true;
-//             for (int i = 0; i < obj_num; i++) {
-//                 if (iter->first.at(i) * (1 + eps) < solution_costs.at(j).at(i)) {
-//                     is_dominated_by_this_one = false;
-//                     break;
-//                 }
-//             }
-//             if (is_dominated_by_this_one) {
-//                 DomPruneNum ++;
-//                 solution_apexs.at(j) = vector_min(solution_apexs.at(j), iter->first);
-//                 is_dominated = true;
-//                 iter = joint_path_list.erase(iter);
-//                 is_prune = true;
-//                 break;
-//             }
-//         }
-//         if (!is_dominated) {
-//             return is_prune;
-//         }
-//     }
-//     return is_prune;
-// }
-
-// bool Solver::DomPrune(std::vector<CostVector>& solution_apex_costs, std::vector<CostVector>& solution_costs, CostVector& apex_cost, CostVector& real_cost)
-// {
-//     int obj_num = real_cost.size();
-//     for (int j = 0; j < solution_apex_costs.size(); j++) {
-//         bool is_dominated = true;
-//         for (int i = 0; i < obj_num; i++) {
-//             if (real_cost.at(i) < solution_costs.at(j).at(i)) {
-//                 is_dominated = false;
-//                 break;
-//             }
-//         }
-//         if(is_dominated){
-//             solution_apex_costs.at(j) = vector_min(solution_apex_costs.at(j), apex_cost);
-//             return true;
-//         }
-//     }
-//     return false;
-// }
-
 
 // A*pex version
 void Solver::NonDomJointPath(HighLevelNodePtr node, MergeStrategy ms, double eps, int agent_id)
@@ -236,54 +186,72 @@ void Solver::NonDomJointPath(HighLevelNodePtr node, MergeStrategy ms, double eps
     // getchar();
 }
 
-// // A*pex with diversity
-// void Solver::NonDomJointPath(HighLevelNodePtr node, int solution_num)
-// {
-//     for(auto e : node->indiv_paths_list){
-//         std::cout << e.size() << " ";
-//     }
-//     auto _t1 = std::chrono::high_resolution_clock::now();
-//     JointPathTuple temp;
-//     node->joint_path_list.clear();
-    
-//     std::list<JointPathTuple> joint_path_vector;
-//     joint_path_vector.push_back(std::make_tuple(CostVector(node->indiv_apex_costs.at(0)[0].size(), 0), 
-//             CostVector(node->indiv_apex_costs.at(0)[0].size(), 0), std::vector<size_t>(), -1));
+// Number of Solution
+void Solver::NonDomJointPath(HighLevelNodePtr node, int solution_num, double max_eps)
+{
+    for(auto e : node->indiv_paths_list){
+        std::cout << e.size() << " ";
+    }
+    auto _t1 = std::chrono::high_resolution_clock::now();
+    int dim = node->indiv_apex_costs.at(0)[0].size();
+    std::pair<CostVector, int>  temp_apex_id;
+    CostVector     temp_real_cost;
+    std::vector<size_t>    temp_id;  // of one joint path
 
-//     for(int i = 0; i < node->indiv_paths_list.size(); i++){
-//         if((std::clock() - start_time)/CLOCKS_PER_SEC > time_limit){
-//             return;
-//         }
-//         std::list<JointPathTuple> _joint_path_vector(joint_path_vector);
-//         joint_path_vector.clear();
-//         for(const auto& joint_path : _joint_path_vector){
-//             for(const auto& indiv_path : node->indiv_paths_list.at(i)){
-//                 temp = joint_path;
-//                 add_cost(std::get<0>(temp), node->indiv_apex_costs.at(i)[indiv_path.first]);
-//                 add_cost(std::get<1>(temp), node->indiv_real_costs.at(i)[indiv_path.first]);
-//                 std::get<2>(temp).push_back(indiv_path.first);
-//                 joint_path_vector.push_back(std::make_tuple(std::get<0>(temp), std::get<1>(temp), std::get<2>(temp), -1));
-//                 // std::push_heap(_joint_path_vector.begin(), _joint_path_vector.end(), less_than);
-//             }
-//         }
-//         joint_path_vector.sort([](const JointPathTuple& a, JointPathTuple& b){
-//             return less_than<JointPathTuple>(a, b);});        
-//         NonDomVec(joint_path_vector, MergeStrategy::NONE, 0);
-//         MergeBySmallestEps(joint_path_vector, solution_num);
-//     }
+    std::list<std::pair<CostVector, int>>   apex_idx_combos;
+    std::vector<CostVector>     real_costs_vector;
+    std::vector<int>            conflict_nums_vector;
+    std::vector<std::vector<size_t>>    ids_vector;
 
-//     joint_path_vector.sort([](const JointPathTuple& a, JointPathTuple& b){
-//         return less_than<JointPathTuple>(a, b);});
+    node->joint_path_list.clear();    
 
-//     for(auto& element : joint_path_vector){
-//         node->joint_path_list.push_back(std::make_pair(std::get<0>(element), std::get<2>(element)));
-//     }
-//     auto t2 = std::chrono::high_resolution_clock::now(); // for timing.
-//     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - _t1);
-//     std::cout << " Non Dom time = " << ((double)duration.count()) / 1000000.0 << std::endl;
-//     std::cout << node->joint_path_list.size() << std::endl;
-//     // getchar();
-// }
+    apex_idx_combos.push_back(std::make_pair(CostVector(dim, 0), 0));
+    real_costs_vector.push_back(CostVector(dim, 0));
+    ids_vector.push_back(std::vector<size_t>());
+
+    for(int i = 0; i < node->indiv_paths_list.size(); i++){
+        if((std::clock() - start_time)/CLOCKS_PER_SEC > time_limit){
+            return;
+        }
+        std::list<std::pair<CostVector, int>> _apex_idx_combos(apex_idx_combos);
+        std::vector<CostVector>     _real_costs_vector(real_costs_vector);
+        std::vector<std::vector<size_t>>    _ids_vector(ids_vector);
+        apex_idx_combos.clear();
+        real_costs_vector.clear(); real_costs_vector.shrink_to_fit();
+        ids_vector.clear(); ids_vector.shrink_to_fit();
+        int new_id = 0;
+        for(const auto& apex_id_combo : _apex_idx_combos){
+            for(const auto& indiv_path : node->indiv_paths_list.at(i)){
+                temp_apex_id = apex_id_combo;
+                temp_real_cost = _real_costs_vector.at(apex_id_combo.second);
+                temp_id = _ids_vector.at(apex_id_combo.second);
+                add_cost(temp_apex_id.first, node->indiv_apex_costs.at(i)[indiv_path.first]);
+                add_cost(temp_real_cost, node->indiv_real_costs.at(i)[indiv_path.first]);
+                temp_id.push_back(indiv_path.first);
+                apex_idx_combos.push_back(std::make_pair(temp_apex_id.first, new_id++));
+                real_costs_vector.push_back(temp_real_cost);
+                ids_vector.push_back(temp_id);
+            }
+        }
+        apex_idx_combos.sort([](const std::pair<CostVector, int>& a, std::pair<CostVector, int>& b){
+            return less_than<std::pair<CostVector, int>>(a, b);});        
+        NonDomVec(apex_idx_combos, real_costs_vector, ids_vector, conflict_nums_vector, MergeStrategy::NONE, 0);
+        MergeBySmallestEps(apex_idx_combos, real_costs_vector, ids_vector, solution_num, max_eps);
+    }
+
+    apex_idx_combos.sort([](const std::pair<CostVector, int>& a, std::pair<CostVector, int>& b){
+        return less_than<std::pair<CostVector, int>>(a, b);
+    });     
+
+    for(auto& element : apex_idx_combos){
+        node->joint_path_list.push_back(std::make_pair(element.first, ids_vector.at(element.second)));
+    }
+    auto t2 = std::chrono::high_resolution_clock::now(); // for timing.
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - _t1);
+    std::cout << " Non Dom time = " << ((double)duration.count()) / 1000000.0 << std::endl;
+    std::cout << node->joint_path_list.size() << std::endl;
+    // getchar();
+}
 
 //  BOA* and NAMOA*dr version
 void Solver::NonDomJointPath(HighLevelNodePtr node)
@@ -329,13 +297,13 @@ void Solver::NonDomJointPath(HighLevelNodePtr node)
 
 
 // A*pex version
-void Solver::NonDomVec(std::list<std::pair<CostVector, int>>& apex_cost_combos, std::vector<CostVector>& real_costs_vector, std::vector<std::vector<size_t>>& ids_vector, 
+void Solver::NonDomVec(std::list<std::pair<CostVector, int>>& apex_idx_combos, std::vector<CostVector>& real_costs_vector, std::vector<std::vector<size_t>>& ids_vector, 
     std::vector<int>& conflict_nums_vector, MergeStrategy ms, double eps)
 {
     if(ms != LEAST_CONFLICT){
-        if (apex_cost_combos.front().first.size() == 2) {
+        if (apex_idx_combos.front().first.size() == 2) {
             size_t g_min = UINT64_MAX;
-            for(auto iter = apex_cost_combos.begin(); iter != apex_cost_combos.end(); ) {
+            for(auto iter = apex_idx_combos.begin(); iter != apex_idx_combos.end(); ) {
                 if (iter->first.at(1) < g_min) {
                     g_min = iter->first.at(1);
                     if(ms == NONE || ms == MORE_SLACK){
@@ -343,10 +311,10 @@ void Solver::NonDomVec(std::list<std::pair<CostVector, int>>& apex_cost_combos, 
                         continue;
                     }
                     bool is_merge = false;
-                    for (auto iter1 = apex_cost_combos.begin(); iter1 != iter; iter1++) {
+                    for (auto iter1 = apex_idx_combos.begin(); iter1 != iter; iter1++) {
                         if (HighLevelMerge(*iter1, *iter, real_costs_vector.at(iter1->second), real_costs_vector.at(iter->second), ids_vector.at(iter1->second), 
                         ids_vector.at(iter->second), -1, -1, ms, eps)) {
-                            iter = apex_cost_combos.erase(std::next(iter1), std::next(iter));
+                            iter = apex_idx_combos.erase(std::next(iter1), std::next(iter));
                             is_merge = true;
                             break;
                         }
@@ -355,13 +323,13 @@ void Solver::NonDomVec(std::list<std::pair<CostVector, int>>& apex_cost_combos, 
                         iter ++;
                     }
                 }else{
-                    iter = apex_cost_combos.erase(iter);
+                    iter = apex_idx_combos.erase(iter);
                 }
             }
-        }else if(apex_cost_combos.front().first.size() == 3){
+        }else if(apex_idx_combos.front().first.size() == 3){
         // dominance check
             std::set<CostVector, Less_Than_>  domination_set;
-            for(auto iter = apex_cost_combos.begin(); iter != apex_cost_combos.end(); ){
+            for(auto iter = apex_idx_combos.begin(); iter != apex_idx_combos.end(); ){
             //  dominance check: if apex be strictly dominated(not eps-), then prune; 
             //  else erase the behind strictly dominated ones in RB-tree
                 std::vector<size_t>  trun_vec({iter->first.at(1), iter->first.at(2)});
@@ -372,17 +340,17 @@ void Solver::NonDomVec(std::list<std::pair<CostVector, int>>& apex_cost_combos, 
                 }
                 auto it = domination_set.upper_bound(trun_vec);
                 if(it != domination_set.begin() && (*std::prev(it)).at(1) <= trun_vec.at(1)){
-                    iter = apex_cost_combos.erase(iter);
+                    iter = apex_idx_combos.erase(iter);
                 }else{  
                 //  merge
                     bool is_merge = false;
                     if(ms != NONE && ms != MORE_SLACK){
-                        for (auto iter1 = apex_cost_combos.begin(); iter1 != iter; iter1++) {
+                        for (auto iter1 = apex_idx_combos.begin(); iter1 != iter; iter1++) {
                             // remark: even if merge happens, the RB-tree doesn't need changing
                             if(HighLevelMerge(*iter1, *iter, real_costs_vector.at(iter1->second), real_costs_vector.at(iter->second), ids_vector.at(iter1->second), 
                             ids_vector.at(iter->second), -1, -1, ms, eps)){  
                                 trun_vec = std::vector<size_t>({iter1->first.at(1), iter1->first.at(2)});
-                                iter = apex_cost_combos.erase(iter);
+                                iter = apex_idx_combos.erase(iter);
                                 is_merge = true;
                                 break;
                             }
@@ -408,12 +376,12 @@ void Solver::NonDomVec(std::list<std::pair<CostVector, int>>& apex_cost_combos, 
             exit(1);
         }
     }else{
-        for(auto iter = apex_cost_combos.begin(); iter != apex_cost_combos.end(); ){
+        for(auto iter = apex_idx_combos.begin(); iter != apex_idx_combos.end(); ){
             bool is_merge = false;
-            for (auto iter1 = apex_cost_combos.begin(); iter1 != iter; iter1++) {
+            for (auto iter1 = apex_idx_combos.begin(); iter1 != iter; iter1++) {
                 if(HighLevelMerge(*iter1, *iter, real_costs_vector.at(iter1->second), real_costs_vector.at(iter->second), ids_vector.at(iter1->second), 
                 ids_vector.at(iter->second), conflict_nums_vector.at(iter1->second), conflict_nums_vector.at(iter->second), ms, eps)){  
-                    iter = apex_cost_combos.erase(iter);
+                    iter = apex_idx_combos.erase(iter);
                     is_merge = true;
                     break;
                 }
@@ -442,8 +410,6 @@ void Solver::NonDomVec(std::list<JointPathPair>& joint_path_list)
             }else{
                 iter = joint_path_list.erase(iter);
             }
-            // std::pop_heap(_joint_path_vector.begin(), _joint_path_vector.end(), more_than_);
-            // _joint_path_vector.pop_back();
         }
     }else if(joint_path_list.front().first.size() == 3){
     // dominance check: if be strictly dominated, then prune; else erase the behind strictly dominated ones in RB-tree
@@ -481,7 +447,7 @@ void Solver::NonDomVec(std::list<JointPathPair>& joint_path_list)
 
 
 bool Solver::HighLevelMerge(std::pair<CostVector, int>& existing_path, std::pair<CostVector, int>& new_path, CostVector& real_cost1, 
-CostVector& real_cost2, std::vector<size_t>& id1, std::vector<size_t>& id2, int conflict_num1, int conflict_num2, MergeStrategy ms, double eps)
+    CostVector& real_cost2, std::vector<size_t>& id1, std::vector<size_t>& id2, int conflict_num1, int conflict_num2, MergeStrategy ms, double eps)
 {
     CostVector apex = vector_min(std::get<0>(existing_path), std::get<0>(new_path));
     if(ms == SMALLER_G2){
@@ -555,23 +521,82 @@ CostVector& real_cost2, std::vector<size_t>& id1, std::vector<size_t>& id2, int 
 }
 
 
-void Solver::MergeBySmallestEps(std::list<JointPathTuple>& joint_path_list, int solution_num, double max_eps)
+void Solver::MergeBySmallestEps(std::list<std::pair<CostVector, int>>& apex_idx_combos, std::vector<CostVector>& real_costs_vector, 
+    std::vector<std::vector<size_t>>& ids_vector, int solution_num, double max_eps)
 {
+    int total_num = apex_idx_combos.size();
+
     using mutual_eps = std::tuple<double, size_t, size_t>; // eps,apex_idx,real_idx,if_valid
-    std::list<mutual_eps>  eps_list;
-    std::vector<CostVector>  apex_vector;
-    std::vector<CostVector>  cost_vector;
-    std::vector<bool>        valid_vector;
-    std::vector<std::vector<size_t>>   id_vector;
+    std::list<mutual_eps>               eps_list;
+    std::vector<CostVector>             apex_vector;
+    std::vector<bool>                   valid_vector(total_num, true);
+    std::vector<int>                    id_vector;
 
-    int total_num = joint_path_list.size();
-
-    for(auto ele: joint_path_list){
-        apex_vector.push_back(std::get<0>(ele));
-        cost_vector.push_back(std::get<1>(ele));
-        id_vector.push_back(std::get<2>(ele));
-        valid_vector.push_back(true);
+    for(auto ele: apex_idx_combos){
+        apex_vector.push_back(ele.first);
+        id_vector.push_back(ele.second);
     }
+
+    for(int i = 0; i < total_num; i++){
+        for(int j = 0; j < total_num; j++){
+            if(j == i){
+                continue;
+            }
+            double eps = calculate_eps(apex_vector.at(i), real_costs_vector.at(id_vector.at(j)));
+            eps_list.push_back(std::make_tuple(eps, i, j));
+        }
+    }
+
+    int  erase_num = 0;
+    while(total_num - erase_num > solution_num){
+        mutual_eps element;
+        double min_eps = INT_MAX;
+        for(auto iter = eps_list.begin(); iter != eps_list.end(); iter++){
+            if(std::get<0>(*iter) < min_eps){
+                element = *iter;
+                min_eps = std::get<0>(*iter);
+            }
+        }
+        if(min_eps > max_eps){
+            break;
+        }
+        erase_num ++;
+        size_t invalid_id = std::get<1>(element);
+        size_t valid_id = std::get<2>(element);
+        apex_vector.at(valid_id) = vector_min(apex_vector.at(valid_id), apex_vector.at(invalid_id));
+        valid_vector.at(invalid_id) = false;
+        for(auto iter = eps_list.begin(); iter != eps_list.end(); ){
+            if(std::get<1>(*iter) == invalid_id || std::get<2>(*iter) == invalid_id){
+                iter = eps_list.erase(iter);
+                continue;
+            }
+            if(std::get<1>(*iter) == valid_id){
+                std::get<0>(*iter) = calculate_eps(apex_vector.at(valid_id), real_costs_vector.at(id_vector.at(std::get<2>(*iter))));
+            }
+            iter ++;
+        }
+    }
+
+    apex_idx_combos.clear();
+    int j = 0;
+    for(int i = 0; i < total_num; i++){
+        if(!valid_vector.at(i)){
+            continue;
+        }
+        apex_idx_combos.push_back(std::make_pair(apex_vector.at(i), id_vector.at(i)));
+    }
+}
+
+
+void Solver::MergeBySmallestEps(std::vector<CostVector>& apex_vectors, std::vector<CostVector>& real_costs_vector, int solution_num, double max_eps)
+{
+    int total_num = apex_vectors.size();
+
+    using mutual_eps = std::tuple<double, size_t, size_t>; // eps,apex_idx,real_idx,if_valid
+    std::list<mutual_eps>               eps_list;
+    std::vector<CostVector>             apex_vector = apex_vectors;
+    std::vector<CostVector>             cost_vector = real_costs_vector;
+    std::vector<bool>                   valid_vector(total_num, true);
 
     for(int i = 0; i < total_num; i++){
         for(int j = 0; j < total_num; j++){
@@ -613,151 +638,86 @@ void Solver::MergeBySmallestEps(std::list<JointPathTuple>& joint_path_list, int 
         }
     }
 
-    joint_path_list.clear();
-    double eps = 0;
-    for(int i = 0; i < total_num; i++){
-        if(!valid_vector.at(i)){
-            continue;
-        }
-        double _eps = calculate_eps(apex_vector.at(i), cost_vector.at(i));
-        eps = eps > _eps ? eps : _eps;
-        joint_path_list.push_back(std::make_tuple(apex_vector.at(i), cost_vector.at(i), id_vector.at(i), -1));
-    }
-}
-
-
-void Solver::MergeBySmallestEps(std::vector<CostVector>& apex_cost, std::vector<CostVector>& real_cost, int solution_num, double max_eps)
-{
-    using mutual_eps = std::tuple<double, size_t, size_t>; // eps,apex_idx,real_idx,if_valid
-    std::list<mutual_eps>    eps_list;
-    std::vector<CostVector>  apex_vector = apex_cost;
-    std::vector<CostVector>  cost_vector = real_cost;
-    std::vector<bool>        valid_vector;
-
-    int total_num = apex_cost.size();
-
-    for(int i = 0; i < total_num; i++){
-        for(int j = 0; j < total_num; j++){
-            if(j == i){
-                continue;
-            }
-            valid_vector.push_back(true);
-            double eps = calculate_eps(apex_vector.at(i), cost_vector.at(j));
-            eps_list.push_back(std::make_tuple(eps, i, j));
-        }
-    }
-
-    int  erase_num = 0;
-    while(total_num - erase_num > solution_num){
-        mutual_eps element;
-        double min_eps = INT_MAX;
-        for(auto iter = eps_list.begin(); iter != eps_list.end(); iter++){
-            if(std::get<0>(*iter) < min_eps){
-                element = *iter;
-                min_eps = std::get<0>(*iter);
-            }
-        }
-        if(min_eps > max_eps){
-            break;
-        }
-        erase_num ++;
-        size_t invalid_id = std::get<1>(element);
-        size_t valid_id = std::get<2>(element);
-        apex_vector.at(valid_id) = vector_min(apex_vector.at(valid_id), apex_vector.at(invalid_id));
-        valid_vector.at(invalid_id) = false;
-        for(auto iter = eps_list.begin(); iter != eps_list.end(); ){
-            if(std::get<1>(*iter) == invalid_id || std::get<2>(*iter) == invalid_id){
-                iter = eps_list.erase(iter);
-                continue;
-            }
-            if(std::get<1>(*iter) == valid_id){
-                std::get<0>(*iter) = calculate_eps(apex_vector.at(valid_id), cost_vector.at(std::get<2>(*iter)));
-            }
-            iter ++;
-        }
-    }
-
-    apex_cost.clear(); apex_cost.shrink_to_fit();
-    real_cost.clear(); real_cost.shrink_to_fit();
-    for(int i = 0; i < total_num; i++){
-        if(!valid_vector.at(i)){
-            continue;
-        }
-        double _eps = calculate_eps(apex_vector.at(i), cost_vector.at(i));
-        apex_cost.push_back(apex_vector.at(i));
-        real_cost.push_back(cost_vector.at(i));
-    }
-}
-
-
-void Solver::MergeByDiv(std::vector<CostVector>& apex_costs, std::vector<CostVector>& real_costs, int solution_num, double max_eps)
-{
-    if(apex_costs.front().size() != 2){
-        output << "MergeByDiv only for dim = 2";
-        exit(1);
-    }
-    size_t max_x = 0, max_y = 0;
-    std::vector<std::pair<int, CostVector>>  id_real_combo;
-    std::list<std::pair<CostVector, CostVector>>  apex_real_combo;
-    for(int i = 0; i < real_costs.size(); i++){
-        max_x = 2*real_costs.at(i).at(0) > max_x ? 2*real_costs.at(i).at(0) : max_x;
-        max_y = 2*real_costs.at(i).at(1) > max_y ? 2*real_costs.at(i).at(1) : max_y;
-        id_real_combo.push_back(std::make_pair(i, real_costs.at(i)));
-    }
-
-    auto _apex_costs = apex_costs; auto _real_costs = real_costs;
-    apex_costs.clear(); apex_costs.shrink_to_fit();
-    real_costs.clear(); real_costs.shrink_to_fit();
-    std::sort(id_real_combo.begin(), id_real_combo.end(), [](std::pair<int, CostVector>&a, std::pair<int, CostVector>& b){
-        for(int i = 0; i < a.second.size(); i++){
-            if(a.second.at(i) != b.second.at(i)){
-                return a.second.at(i) < b.second.at(i);
-            }
-        }
-        return true;
-    });
-    size_t min_g2 = INT_MAX;
-    for(int i = 0; i < id_real_combo.size(); i++){
-        if(id_real_combo.at(i).second.at(1) >= min_g2){
-            apex_real_combo.back().first = vector_min(apex_real_combo.back().first, _apex_costs.at(id_real_combo.at(i).first));
-        }else{
-            apex_real_combo.push_back(std::make_pair(_apex_costs.at(id_real_combo.at(i).first), id_real_combo.at(i).second));
-            min_g2 = id_real_combo.at(i).second.at(1);
-        }
-    }
+    apex_vectors.clear();
+    real_costs_vector.clear();
     
-    while(apex_real_combo.size() > solution_num){
-        auto flag = apex_real_combo.begin();  // with smallest contribution
-        int min_contri = INT_MAX;
-        for(auto iter = apex_real_combo.begin(); iter != apex_real_combo.end(); iter++){
-            int tr_x = std::next(iter) == apex_real_combo.end() ? max_x : std::next(iter)->second.at(0);
-            int tr_y = iter == apex_real_combo.begin() ? max_y : std::prev(iter)->second.at(1);
-            int contri = (tr_x - iter->second.at(0)) * (tr_y - iter->second.at(1));
-            if(contri < min_contri){
-                min_contri = contri;
-                flag = iter;
-            }
+    for(int i = 0; i < total_num; i++){
+        if(!valid_vector.at(i)){
+            continue;
         }
-        if(flag == apex_real_combo.begin()){
-            std::next(flag)->first = vector_min(flag->first, std::next(flag)->first);
-        }else if(std::next(flag) == apex_real_combo.end()){
-            std::prev(flag)->first = vector_min(flag->first, std::prev(flag)->first);
-        }else{
-            double eps1 = calculate_eps(flag->first, std::prev(flag)->second);
-            double eps2 = calculate_eps(flag->first, std::next(flag)->second);
-            if(eps1 < eps2){
-                std::prev(flag)->first = vector_min(flag->first, std::prev(flag)->first);
-            }else{
-                std::next(flag)->first = vector_min(flag->first, std::next(flag)->first);
-            }
-        }
-        apex_real_combo.erase(flag);
-    }
-    for(auto ele: apex_real_combo){
-        apex_costs.push_back(ele.first);
-        real_costs.push_back(ele.second);
+        apex_vectors.push_back(apex_vector.at(i));
+        real_costs_vector.push_back(cost_vector.at(i));
     }
 }
+
+// void Solver::MergeByDiv(std::vector<CostVector>& apex_costs, std::vector<CostVector>& real_costs, int solution_num, double max_eps)
+// {
+//     if(apex_costs.front().size() != 2){
+//         output << "MergeByDiv only for dim = 2";
+//         exit(1);
+//     }
+//     size_t max_x = 0, max_y = 0;
+//     std::vector<std::pair<int, CostVector>>  id_real_combo;
+//     std::list<std::pair<CostVector, CostVector>>  apex_real_combo;
+//     for(int i = 0; i < real_costs.size(); i++){
+//         max_x = 2*real_costs.at(i).at(0) > max_x ? 2*real_costs.at(i).at(0) : max_x;
+//         max_y = 2*real_costs.at(i).at(1) > max_y ? 2*real_costs.at(i).at(1) : max_y;
+//         id_real_combo.push_back(std::make_pair(i, real_costs.at(i)));
+//     }
+
+//     auto _apex_costs = apex_costs; auto _real_costs = real_costs;
+//     apex_costs.clear(); apex_costs.shrink_to_fit();
+//     real_costs.clear(); real_costs.shrink_to_fit();
+//     std::sort(id_real_combo.begin(), id_real_combo.end(), [](std::pair<int, CostVector>&a, std::pair<int, CostVector>& b){
+//         for(int i = 0; i < a.second.size(); i++){
+//             if(a.second.at(i) != b.second.at(i)){
+//                 return a.second.at(i) < b.second.at(i);
+//             }
+//         }
+//         return true;
+//     });
+//     size_t min_g2 = INT_MAX;
+//     for(int i = 0; i < id_real_combo.size(); i++){
+//         if(id_real_combo.at(i).second.at(1) >= min_g2){
+//             apex_real_combo.back().first = vector_min(apex_real_combo.back().first, _apex_costs.at(id_real_combo.at(i).first));
+//         }else{
+//             apex_real_combo.push_back(std::make_pair(_apex_costs.at(id_real_combo.at(i).first), id_real_combo.at(i).second));
+//             min_g2 = id_real_combo.at(i).second.at(1);
+//         }
+//     }
+    
+//     while(apex_real_combo.size() > solution_num){
+//         auto flag = apex_real_combo.begin();  // with smallest contribution
+//         int min_contri = INT_MAX;
+//         for(auto iter = apex_real_combo.begin(); iter != apex_real_combo.end(); iter++){
+//             int tr_x = std::next(iter) == apex_real_combo.end() ? max_x : std::next(iter)->second.at(0);
+//             int tr_y = iter == apex_real_combo.begin() ? max_y : std::prev(iter)->second.at(1);
+//             int contri = (tr_x - iter->second.at(0)) * (tr_y - iter->second.at(1));
+//             if(contri < min_contri){
+//                 min_contri = contri;
+//                 flag = iter;
+//             }
+//         }
+//         if(flag == apex_real_combo.begin()){
+//             std::next(flag)->first = vector_min(flag->first, std::next(flag)->first);
+//         }else if(std::next(flag) == apex_real_combo.end()){
+//             std::prev(flag)->first = vector_min(flag->first, std::prev(flag)->first);
+//         }else{
+//             double eps1 = calculate_eps(flag->first, std::prev(flag)->second);
+//             double eps2 = calculate_eps(flag->first, std::next(flag)->second);
+//             if(eps1 < eps2){
+//                 std::prev(flag)->first = vector_min(flag->first, std::prev(flag)->first);
+//             }else{
+//                 std::next(flag)->first = vector_min(flag->first, std::next(flag)->first);
+//             }
+//         }
+//         apex_real_combo.erase(flag);
+//     }
+//     for(auto ele: apex_real_combo){
+//         apex_costs.push_back(ele.first);
+//         real_costs.push_back(ele.second);
+//     }
+// }
 
 
 double Solver::CD(CostVector& a, CostVector& b, std::vector<double> box_len)
@@ -782,7 +742,7 @@ CostVector Solver::vector_min(CostVector& a, CostVector& b){
 double Solver::calculate_eps(CostVector& a, CostVector& b){
     double eps = 0;
     for(int i = 0; i < a.size(); i++){
-        eps = double(b.at(i)+0.2)/double(a.at(i)) - 1 > eps ? double(b.at(i)+0.2)/double(a.at(i)) - 1 : eps;
+        eps = double(b.at(i)+0.1)/double(a.at(i)) - 1 > eps ? double(b.at(i)+0.1)/double(a.at(i)) - 1 : eps;
     }
     return eps;
 }
@@ -839,6 +799,8 @@ std::tuple<double, double, double, double, int, int, int, int> Solver::search(si
     }else if(vm["mode"].as<std::string>() == "diversity"){
         solve_mode = SolveMode::DIVERSITY;
         heps_apex = 0;
+        Leps_merge = 0;
+        Leps_prune = 0;
         if(algorithm != "Apex"){
             output << "diversity only for A*pex";
             exit(1);
@@ -961,11 +923,20 @@ std::tuple<double, double, double, double, int, int, int, int> Solver::search(si
                         hsolution_apex_costs.push_back(iter->first);
                         std::cout << "there is a solution" << std::endl;
                         solution_number ++;
-
-                        if(solve_mode == SolveMode::SMALLEST_EPS || solve_mode == SolveMode::DIVERSITY){
-                            double _eps = calculate_eps(iter->first, real_cost);
-                            heps_apex = heps_apex > _eps ? heps_apex : _eps;
+                        
+                        if(solve_mode == SolveMode::DIVERSITY){
+                            MergeBySmallestEps(hsolution_apex_costs, hsolution_costs, solution_num);
+                            for(int i = 0; i < hsolution_apex_costs.size(); i++){
+                                double _eps = calculate_eps(hsolution_apex_costs.at(i), hsolution_costs.at(i));
+                                heps_apex = heps_apex > _eps ? heps_apex : _eps;
+                            }
+                            Leps_merge = heps_apex;
+                            Leps_prune = heps_apex;
                         }
+                        // if(solve_mode == SolveMode::SMALLEST_EPS || solve_mode == SolveMode::DIVERSITY){
+                        //     double _eps = calculate_eps(iter->first, real_cost);
+                        //     heps_apex = heps_apex > _eps ? heps_apex : _eps;
+                        // }
                     }
 
                     iter = node->joint_path_list.erase(iter);
@@ -1084,32 +1055,7 @@ std::tuple<double, double, double, double, int, int, int, int> Solver::search(si
                 if(algorithm == "Apex" && if_CAT){
                     calculateCAT(node, _cat, agent_id);
                 }
-
-            // if(constraint_num >= 1222){
-            //     std::cout << "CONSTRAINT NUM:" << constraint_num << std::endl;
-            //     if_stop = true;
-            //     std::cout << agent_id << std::endl;
-            //     std::cout << "vertex constraint" << std::endl;
-            //     for(auto ele: new_node->vertex_constraints.at(agent_id)){
-            //         std::cout << ele.first << ": ";
-            //         for(auto ele1: ele.second){
-            //             std::cout << ele1 << " ";
-            //         }
-            //         std::cout << std::endl;
-            //     }
-            //     std::cout << "edge constraint" << std::endl;
-            //     for(auto ele: new_node->edge_constraints.at(agent_id)){
-            //         std::cout << ele.first << ": ";
-            //         for(auto ele1: ele.second){
-            //             for(auto ele2: ele1.second){
-            //                 std::cout << "(" << ele1.first << "," << ele2 << ") "; 
-            //             }
-            //         }
-            //         std::cout << std::endl;
-            //     }
-            //     getchar();
-            // }
-                
+               
 
                 auto _t_0_ = std::chrono::high_resolution_clock::now(); // for timing.
                 single_run_map(graph_size, graph, heuristics.at(agent_id), start_end.at(agent_id).first, start_end.at(agent_id).second, 
@@ -1169,30 +1115,6 @@ std::tuple<double, double, double, double, int, int, int, int> Solver::search(si
                     calculateCAT(node, _cat, agent_id);
                 }
 
-                // if(constraint_num >= 1222){
-                //     std::cout << "CONSTRAINT NUM:" << constraint_num << std::endl;
-                //     if_stop = true;
-                //     std::cout << agent_id << std::endl;
-                //     std::cout << "vertex constraint" << std::endl;
-                //     for(auto ele: new_node->vertex_constraints.at(agent_id)){
-                //         std::cout << ele.first << ": ";
-                //         for(auto ele1: ele.second){
-                //             std::cout << ele1 << " ";
-                //         }
-                //         std::cout << std::endl;
-                //     }
-                //     std::cout << "edge constraint" << std::endl;
-                //     for(auto ele: new_node->edge_constraints.at(agent_id)){
-                //         std::cout << ele.first << ": ";
-                //         for(auto ele1: ele.second){
-                //             for(auto ele2: ele1.second){
-                //                 std::cout << "(" << ele1.first << "," << ele2 << ") "; 
-                //             }
-                //         }
-                //         std::cout << std::endl;
-                //     }
-                //     getchar();
-                // }
 
                 auto _t_0_ = std::chrono::high_resolution_clock::now(); // for timing.
                 single_run_map(graph_size, graph, heuristics.at(agent_id), start_end.at(agent_id).first, start_end.at(agent_id).second, 
@@ -1274,9 +1196,9 @@ std::tuple<double, double, double, double, int, int, int, int> Solver::search(si
             }
         }
     }else if(solve_mode == SolveMode::SMALLEST_EPS){
-        MergeBySmallestEps(hsolution_apex_costs, hsolution_costs, solution_num);
+        // MergeBySmallestEps(hsolution_apex_costs, hsolution_costs, solution_num);
     }if(solve_mode == SolveMode::DIVERSITY){
-        MergeByDiv(hsolution_apex_costs, hsolution_costs, solution_num);
+        // MergeBySmallestEps
     }
     
     std::vector<std::pair<CostVector, int>> apex_id_list(hsolution_costs.size());
