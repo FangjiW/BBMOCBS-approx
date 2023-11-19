@@ -400,3 +400,28 @@ void PreProcessor::read_cost(std::string cost_file, Map& map, std::vector<Edge>&
     }
     Input.close();
 }
+
+void PreProcessor::read_cost(int base_cost, Map& map, std::vector<Edge>& edges, int dim_i)
+{
+    Map cost_map(map.width, map.height);
+
+    // Read the map data from the file and store it in the Map object
+    for(int x = 0; x < map.height; x ++) {
+        for(int y = 0; y < map.width; y ++){
+            cost_map.setVal(x, y, base_cost);
+        }
+    }
+
+    for(int x = 0; x < map.height; x ++) {
+        for(int y = 0; y < map.width; y ++){
+            if(map.getVal(x, y) == -1){
+                continue;
+            }
+            for(Edge& edge: edges){
+                if(edge.target == map.getID(x, y)){
+                    edge.cost.at(dim_i) = cost_map.getVal(x, y);
+                }
+            }
+        }
+    }
+}

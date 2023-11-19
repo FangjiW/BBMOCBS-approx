@@ -11,6 +11,7 @@ class Solver
 {
 public:
     Solver(){};
+    void init(size_t graph_size, int agent_num, Algorithm algorithm, MergeStrategy& ms, bool if_eager, int dim, int turn_dim, int turn_cost, int solution_num, double eps, double eps_hm, int time_limit);
 //  DomPrune
     //  for joint_path_list
     bool DomPrune(std::vector<CostVector>& solution_apexs, std::vector<CostVector>& solution_costs, std::list<JointPathPair>& joint_path_list, double eps, int& DomPruneNum);
@@ -28,8 +29,8 @@ public:
     void NonDomVec(std::list<std::pair<CostVector, int>>& apex_idx_combos, std::vector<CostVector>& real_costs_vector, std::vector<std::vector<size_t>>& ids_vector, 
         std::vector<int>& conflict_nums_vector, MergeStrategy ms, double eps);
     //  return if can merge
-    bool HighLevelMerge(std::pair<CostVector, int>& existing_path, std::pair<CostVector, int>& new_path, CostVector& real_cost1, 
-        CostVector& real_cost2, std::vector<size_t>& id1, std::vector<size_t>& id2, int conflict_num1, int conflict_num2, MergeStrategy ms, double eps);
+    bool HighLevelMerge(std::pair<CostVector, int>& existing_path, std::pair<CostVector, int>& new_path, CostVector& real_cost1, CostVector& real_cost2, 
+        int conflict_num1, int conflict_num2, MergeStrategy ms, double eps);
 
 //  BOA* and NAMOA* version
     void NonDomJointPath(HighLevelNodePtr node);
@@ -37,9 +38,7 @@ public:
 
     void calculateCAT(HighLevelNodePtr, CAT& cat, int agent_id);
 
-    std::tuple<double, double, double, double, int, int, int, int> search(size_t graph_size, std::vector<Edge>& edges, 
-        boost::program_options::variables_map& vm, std::vector<std::pair<size_t, size_t>>& start_end, MergeStrategy& ms, LoggerPtr& logger, 
-        HSolutionID& hsolution_ids, std::vector<CostVector>& hsolution_costs);
+    std::tuple<double, double, double, int, int> search(std::vector<Edge>& edges, std::vector<std::pair<size_t, size_t>>& start_end, HSolutionID& hsolution_ids, std::vector<CostVector>& hsolution_costs, LoggerPtr& logger);
 
 // A*pex with dibersity
     void NonDomJointPath(HighLevelNodePtr node, int solution_num, double max_eps=INT_MAX);
@@ -50,4 +49,23 @@ public:
     double calculate_eps(CostVector& a, CostVector& b);
     void MergeBySmallestEps(std::vector<CostVector>& apex_vectors, std::vector<CostVector>& real_costs_vector, int solution_num, double max_eps=INT_MAX);
     // void MergeByDiv(std::vector<CostVector>& apex_cost, std::vector<CostVector>& real_cost, int solution_num, double max_eps=INT_MAX);
+
+protected:
+    size_t _graph_size;
+    int _agent_num;
+    int _dim;
+    Algorithm _algorithm;
+    LSolver _l_solver;
+    MergeStrategy _ms;
+    double _eps;
+    double _eps_hm;
+
+    bool _if_eager;
+
+    int _turn_dim;
+    int _turn_cost;
+
+    int _solution_num;
+
+    int _time_limit;
 };

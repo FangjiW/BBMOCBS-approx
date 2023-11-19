@@ -12,10 +12,9 @@ std::string alg_variant = "";
 // Simple example to demonstarte the usage of the algorithm
 
 void single_run_map(size_t graph_size, AdjacencyMatrix& graph, Heuristic& heuristic, size_t source, 
-    size_t target, std::string algorithm, MergeStrategy ms, LoggerPtr logger, 
-    double Leps_merge, double Leps_prune, unsigned int time_limit, PathSet& solution_ids, 
+    size_t target, LSolver l_solver, double eps, MergeStrategy ms, LoggerPtr logger, unsigned int time_limit, PathSet& solution_ids, 
     CostSet& solution_apex_costs, CostSet& solution_real_costs, VertexConstraint& vertex_constraints, 
-    EdgeConstraint& edge_constraints, CAT& cat, std::unordered_map<int, int>& conflict_num_map, int turn_mode, int turn_cost) {
+    EdgeConstraint& edge_constraints, CAT& cat, std::unordered_map<int, int>& conflict_num_map, int turn_dim, int turn_cost) {
     // Compute heuristic
     // std::cout << "Start Computing Heuristic" << std::endl;
 
@@ -37,19 +36,16 @@ void single_run_map(size_t graph_size, AdjacencyMatrix& graph, Heuristic& heuris
     auto runtime = std::clock();
 
     std::unique_ptr<AbstractSolver> solver;
-    if (algorithm == "PPA"){
-        // Pair<double> eps_pair({eps, eps});
-        // solver = std::make_unique<PPA>(graph, eps_pair, logger);
-    }else if (algorithm == "BOA"){
+    if (l_solver == LSolver::BOA){
         Pair<double> eps_pair({0.0, 0.0});
-        solver = std::make_unique<BOAStar>(graph, eps_pair, turn_mode, turn_cost, logger);
-    }else if (algorithm == "NAMOAdr"){
+        solver = std::make_unique<BOAStar>(graph, eps_pair, turn_dim, turn_cost, logger);
+    }else if (l_solver == LSolver::NAMOA){
         EPS eps_vec (graph.get_num_of_objectives(), 0);
-        solver = std::make_unique<NAMOAdr>(graph, eps_vec, turn_mode, turn_cost, logger);
-    }else if (algorithm == "Apex"){
-        EPS eps_prune (graph.get_num_of_objectives(), Leps_prune);
-        EPS eps_merge (graph.get_num_of_objectives(), Leps_merge);
-        solver = std::make_unique<ApexSearch>(graph, eps_merge, eps_prune, turn_mode, turn_cost, logger);
+        solver = std::make_unique<NAMOAdr>(graph, eps_vec, turn_dim, turn_cost, logger);
+    }else if (l_solver == LSolver::APEX){
+        EPS eps_prune (graph.get_num_of_objectives(), eps);
+        EPS eps_merge (graph.get_num_of_objectives(), eps);
+        solver = std::make_unique<ApexSearch>(graph, eps_merge, eps_prune, turn_dim, turn_cost, logger);
         ((ApexSearch*)solver.get())->set_merge_strategy(ms);
     }else{
         std::cerr << "unknown solver name" << std::endl;

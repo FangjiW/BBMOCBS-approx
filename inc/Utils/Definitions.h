@@ -178,7 +178,10 @@ struct Node {
 //     friend std::ostream& operator<<(std::ostream &stream, const PathPair &pp);
 // };
 
-enum MergeStrategy {SMALLER_G2, RANDOM, MORE_SLACK, SMALLER_G2_FIRST, REVERSE_LEX, LEAST_CONFLICT, NONE};
+enum Algorithm {BBMOCBS_EPS, BBMOCBS_PEX, BBMOCBS_K};
+enum LSolver {APEX, BOA, NAMOA};
+enum MergeStrategy {SMALLER_G2, RANDOM, MORE_SLACK, SMALLER_G2_FIRST, REVERSE_LEX, LESS_CONFLICT, NONE};
+enum CostMetric {R, T, D};
 
 struct ApexPathPair {
     size_t      id; // state of the node
@@ -297,8 +300,6 @@ inline bool same_orientation(NodePtr& ap1, NodePtr& ap2)
     }
     return false;
 }
-
-enum SolveMode {GIVEN_EPSILON, SMALLEST_EPS, DIVERSITY};    // SMALLEST_EPS and DIVERSITY are given solution number
 
 inline bool is_dominated(CostVector& a, CostVector& b, double eps=0)
 {
