@@ -36,14 +36,13 @@ public:
     void NonDomJointPath(HighLevelNodePtr node);
     void NonDomVec(std::list<JointPathPair>& joint_path_list);
 
-    void calculateCAT(HighLevelNodePtr, CAT& cat, int agent_id);
+    void calculateCAT(HighLevelNodePtr, VertexCAT& vertex_cat, EdgeCAT& edge_cat, int agent_id);
 
     std::tuple<double, double, double, int, int> search(std::vector<Edge>& edges, std::vector<std::pair<size_t, size_t>>& start_end, HSolutionID& hsolution_ids, std::vector<CostVector>& hsolution_costs, LoggerPtr& logger);
 
 // A*pex with dibersity
     void NonDomJointPath(HighLevelNodePtr node, int solution_num, double max_eps=INT_MAX);
-    void MergeBySmallestEps(std::list<std::pair<CostVector, int>>& apex_idx_combos, std::vector<CostVector>& real_costs_vector, 
-        std::vector<std::vector<size_t>>& ids_vector, int solution_num, double max_eps=INT_MAX);
+    void MergeBySmallestEps(std::list<std::pair<CostVector, int>>& apex_idx_combos, std::vector<CostVector>& real_costs_vector, int solution_num, double max_eps=INT_MAX);
     double CD(CostVector& a, CostVector& b, std::vector<double> box_len);
     CostVector vector_min(CostVector& a, CostVector& b);
     double calculate_eps(CostVector& a, CostVector& b);

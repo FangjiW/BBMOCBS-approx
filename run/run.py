@@ -10,9 +10,14 @@ def run():
         programs = json.load(file)
 
 
-    with multiprocessing.Pool(processes=4) as pool:
-        pool.starmap(run_once, [(program["map"], program["metric"], program["algorithm"], program["eps"], program["agent_num"],  
-                                 program["eps_ratio"], program["CB"], program["eager"], program["solution_num"]) for program in programs])
+    # with multiprocessing.Pool(processes=1) as pool:
+    #     pool.starmap(run_once, [(program["map"], program["metric"], program["algorithm"], program["eps"], program["agent_num"],  
+    #                              program["eps_ratio"], program["CB"], program["eager"], program["solution_num"]) for program in programs])
+
+        for program in programs:
+            run_once(program["map"], program["metric"], program["algorithm"], program["eps"], program["agent_num"], 
+                program["eps_ratio"], program["CB"], program["eager"], program["solution_num"])
+
     
 
 

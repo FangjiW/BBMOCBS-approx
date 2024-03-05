@@ -10,8 +10,14 @@ unique_file = "unique2.cost"
 
 
 def run_once(map, metric, algorithm, eps, agent_num, eps_ratio=0, CB=True, eager=True, solution_num=sys.maxsize):
+    if(algorithm == "BBMOCBS-K"):
+        return
     if eps_ratio == 0.8:
         eps_ratio = 1
+    if eps_ratio == 0:
+        return
+    if CB == True and eager == False:
+        return
     root_directory = "/home/hacken/SummerResearch/BB/"
     data_directory = os.path.join(root_directory, "dataset", map)
     scenario_directory = os.path.join(data_directory, "scenario")
@@ -35,9 +41,9 @@ def run_once(map, metric, algorithm, eps, agent_num, eps_ratio=0, CB=True, eager
         if_eager = ""; if_eager_ = "false"
     
     if CB:
-        if_CB = "-CB"; if_CB_ = "true"
+        if_CB = "-RCB"; if_CB_ = "true"
     else:
-        if_CB = "-SLK"; if_CB_ = "false"
+        if_CB = "-REV"; if_CB_ = "false"
     
     if algorithm == "BBMOCBS-eps":
         output_file = os.path.join(output_directory, "EPS-"+"{:.2f}-{}{}".format(eps, if_eager, metric, time))
@@ -48,10 +54,33 @@ def run_once(map, metric, algorithm, eps, agent_num, eps_ratio=0, CB=True, eager
     elif algorithm == "BBMOCBS-k":
         output_file = os.path.join(output_directory, "K-{}{}{}-{}{}".format(solution_num, if_CB, if_eager, metric, time))
         solution_num_command = " -k " + str(solution_num)
-    # output_file = os.path.join("..", str(dim)+"d.out", map, "n="+str(agent_num), output_name)
+        
 
+    # if the last file is unfinished, terminate
+    if algorithm != "BBMOCBS-k" and eps != 0.1:
+        if eps == 0:
+            eps_ = 0.03
+        if eps == 0.03:
+            eps_ = 0.05
+        if eps == 0.05:
+            eps_ = 0.1
+        output_directory_ = os.path.join(root_directory, str(dim)+"d.out", map, "n="+str(agent_num))
+        if algorithm == "BBMOCBS-eps":
+            output_file_ = os.path.join(output_directory_, "EPS-"+"{:.2f}-{}{}".format(eps_, if_eager, metric, time))
+        elif algorithm == "BBMOCBS-pex":
+            output_file_ = os.path.join(output_directory_, "PEX-{:.2f}-{:.1f}{}{}-{}{}".format(eps_, eps_ratio, if_CB, if_eager, metric, time))
 
-    # if last file not finish, terminate
+        if not os.path.exists(output_file_):
+            return
+        else:
+            with open(output_file_, 'r') as output:
+                if_last_over = False
+                for line in output:
+                    if "AVERAGE" in line:
+                        if_last_over = True
+                if not if_last_over:
+                    return
+
     if agent_num > 4:
         output_directory_ = os.path.join(root_directory, str(dim)+"d.out", map, "n="+str(agent_num-4))
         if algorithm == "BBMOCBS-eps":
@@ -71,7 +100,7 @@ def run_once(map, metric, algorithm, eps, agent_num, eps_ratio=0, CB=True, eager
                         if_last_over = True
                 if not if_last_over:
                     return
-                
+
 
     if not os.path.exists(output_file):
         with open(output_file, "w") as output:
@@ -226,10 +255,9 @@ if __name__ == "__main__":
     parser.add_argument("-e", "--eps", type=float, default=0, help="approximate factor")
     parser.add_argument("-r", "--eps_ratio", type=float, default=0, help="high-level-merging eps / eps")
     parser.add_argument("-n", "--agent_num", type=int, required=True, help="number of agents")
-    parser.add_argument("--CB", type=bool, default=True, help="if conflict-based merging")
-    parser.add_argument("--eager", type=bool, default=True, help="if eager-solution update")
+    parser.add_argument("--CB", action="store_true", help="if conflict-based merging")
+    parser.add_argument("--eager", action="store_true", help="if eager-solution update")
     parser.add_argument("-k", "--solution_num", type=int, default=sys.maxsize, help="desirable number of solutions: only for BB-MO-CBS-k")
     
     args = parser.parse_args()
-    
     run_once(map=args.map, metric=args.metric, algorithm=args.algorithm, eps=args.eps, agent_num=args.agent_num, eps_ratio=args.eps_ratio, CB=args.CB, eager=args.eager, solution_num=args.solution_num)

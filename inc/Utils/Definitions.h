@@ -75,10 +75,8 @@ struct Node;
 // struct PathPair;
 struct ApexPathPair;
 using NodePtr       = std::shared_ptr<Node>;
-// using PathPairPtr   = std::shared_ptr<PathPair>;
 using ApexPathPairPtr   = std::shared_ptr<ApexPathPair>;
 using SolutionSet   = std::vector<NodePtr>;
-// using PPSolutionSet = std::vector<PathPairPtr>;
 using ApexPathSolutionSet = std::vector<ApexPathPairPtr>;
 
 
@@ -154,34 +152,11 @@ struct Node {
     friend std::ostream& operator<<(std::ostream &stream, const Node &node);
 };
 
-// struct PathPair {
-//     size_t      id;
-//     NodePtr     top_left;
-//     NodePtr     bottom_right;
-//     NodePtr     parent;
-//     bool        is_active=true;
-
-//     PathPair(const NodePtr &top_left, const NodePtr &bottom_right)
-//         : id(top_left->id), top_left(top_left), bottom_right(bottom_right), parent(top_left->parent) {};
-
-//     bool update_nodes_by_merge_if_bounded(const PathPairPtr &other, const Pair<double> eps);
-//     bool update_nodes_by_merge_if_bounded_keep_track(const PathPairPtr &other, const Pair<double> eps, std::list<NodePtr>& pruned_list);
-//     bool update_nodes_by_merge_if_bounded2(const PathPairPtr &other, const Pair<double> eps);
-
-//     bool if_merge_bounded(const PathPairPtr &other, const Pair<double> eps)  const;
-
-
-//     struct more_than_full_cost {
-//  bool operator()(const PathPairPtr &a, const PathPairPtr &b) const;
-//     };
-
-//     friend std::ostream& operator<<(std::ostream &stream, const PathPair &pp);
-// };
 
 enum Algorithm {BBMOCBS_EPS, BBMOCBS_PEX, BBMOCBS_K};
 enum LSolver {APEX, BOA, NAMOA};
 enum MergeStrategy {SMALLER_G2, RANDOM, MORE_SLACK, SMALLER_G2_FIRST, REVERSE_LEX, LESS_CONFLICT, NONE};
-enum CostMetric {R, T, D};
+// enum CostMetric {R, T, D};
 
 struct ApexPathPair {
     size_t      id; // state of the node
@@ -247,7 +222,8 @@ using PathSet = std::unordered_map<size_t, std::vector<size_t>>;
 using CostSet = std::unordered_map<size_t, std::vector<size_t>>;
 using JointPathPair = std::pair<CostVector, std::vector<size_t>>;
 using JointPathTuple = std::tuple<CostVector, CostVector, std::vector<size_t>, int>;
-using CAT = std::vector<std::vector<int>>;
+using VertexCAT = std::unordered_map<size_t, std::vector<int>>;  // <t, <vertex, num>>
+using EdgeCAT = std::unordered_map<size_t, std::vector<std::unordered_map<size_t, int>>>;  // <t, <source, <target, num>>>
 
 inline void add_cost(CostVector& a, const CostVector& b)
 {
@@ -271,9 +247,6 @@ public:
     std::unordered_map<int, int>        conflict_num;    // the latest low-level agent's conflict_num with other agents
     
     std::list<JointPathPair>            joint_path_list;
-    // std::vector<JointPathPtr>           all_joint_path;
-    // JointPathPtr                        rep_path;   // representative path id in Pareto-optimal set
-    // std::vector<ApexPathSolutionSet>    all_solutions;
 
     struct more_than_full_cost{
         bool operator()(HighLevelNodePtr& a, HighLevelNodePtr& b);

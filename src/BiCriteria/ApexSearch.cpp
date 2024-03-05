@@ -72,7 +72,7 @@ bool ApexSearch::is_dominated(ApexPathPairPtr ap, size_t target){
 
 void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs, CostSet& solution_real_costs, 
         size_t source, size_t target, Heuristic &heuristic, VertexConstraint& vertex_constraints, EdgeConstraint& edge_constraints,
-        unsigned int time_limit, CAT& cat, std::unordered_map<int, int>& conflict_num_map) 
+        unsigned int time_limit, VertexCAT& vertex_cat, EdgeCAT& edge_cat, std::unordered_map<int, int>& conflict_num_map) 
 {   
     double time = 0;
     double time2 = 0;
@@ -164,11 +164,19 @@ void ApexSearch::operator()(PathSet& solution_ids, CostSet& solution_apex_costs,
                 continue;
             }
 
-            for(int ele: cat.at(next_ap->id)){
-                if(next_ap->path_node->t == ele){
-                    next_ap->path_node->conflict_num ++;
+            if(vertex_cat.count(next_ap->path_node->t)){
+                next_ap->path_node->conflict_num += vertex_cat.at(next_ap->path_node->t).at(next_ap->id);
+            }
+            if(edge_cat.count(ap->path_node->t)){
+                if(edge_cat.at(ap->path_node->t).at(ap->id).count(next_ap->path_node->id)){
+                    next_ap->path_node->conflict_num += edge_cat.at(ap->path_node->t).at(ap->id).at(next_ap->path_node->id);
                 }
             }
+            // for(int ele: cat.at(next_ap->id)){
+            //     if(next_ap->path_node->t == ele){
+            //         next_ap->path_node->conflict_num ++;
+            //     }
+            // }
 
             // If not dominated extend path pair and push to queue
             // Creation is defered after dominance check as it is
