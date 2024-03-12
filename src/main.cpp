@@ -4,162 +4,145 @@
 #include <time.h>
 #include <fstream>
 #include <chrono>
+#include <ctime>
 #include <stdlib.h>
 #include <dirent.h>
 #include <string>
 
-#include "Utils/Logger.h"
-#include "Utils/Solver.h"
+#include "LowLevel/Utils/Logger.h"
+#include "HighLevel/HighLevelSolver.h"
+#include "HighLevel/epsSolver.h"
+#include "HighLevel/pexSolver.h"
+#include "HighLevel/kSolver.h"
 
 #include <boost/program_options.hpp>
-#include<boost/tokenizer.hpp>
+#include <boost/tokenizer.hpp>
 
+// using namespace std;
 
-const MergeStrategy DEFAULT_MERGE_STRATEGY = MergeStrategy::SMALLER_G2;
-
-using namespace std;
+std::unordered_map<size_t, std::vector<int>> id2coord;  // node_id to coordinate
+std::string map_name;
+std::ofstream output;
 
 int main(int argc, char** argv)
 {
-    namespace po = boost::program_options;
-    // Declare the supported options.
-    po::options_description desc("Allowed options");
-    desc.add_options()
-        ("help", "produce help message")
-        ("map,m", po::value<std::string>()->required(), "Map File")
-        ("cost,c", po::value<std::string>()->default_value(""), "Cost File")
-        ("config", po::value<std::string>()->required(), "Configure File")
-        ("dim,d", po::value<int>()->default_value(2), "dimension of cost function")
-        ("hem", po::value<double>()->default_value(0), "High Level merge approximate factor")
-        ("lem", po::value<double>()->default_value(0), "Low Level merge approximate factor")
-        ("hep", po::value<double>()->default_value(0), "High Level prune approximate factor")
-        ("lep", po::value<double>()->default_value(0), "Low Level prune approximate factor")
-        ("agent_num,n", po::value<int>()->default_value(-1), "number of agents")
-        ("merge", po::value<std::string>()->default_value(""), "strategy for merging apex node pair: SMALLER_G2, RANDOM or MORE_SLACK")
-        ("algorithm,a", po::value<std::string>()->default_value("Apex"), "low-level solvers (BOA, PPA or Apex search)")
-        ("cutoffTime,t", po::value<int>()->default_value(300), "cutoff time (seconds)")
 
-        ("output,o", po::value<std::string>()->required(), "Name of the output file")
-        ("logging_file", po::value<std::string>()->default_value(""), "logging file" )
-        ;
-    po::variables_map vm;
-    po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm);
+namespace po = boost::program_options;
+// Declare the supported options.
+po::options_description desc("Allowed options");
+desc.add_options()
+    ("help", "produce help message")
+    ("map_file,m", po::value<std::string>()->required(), "Map File")
+    ("agent_num,n", po::value<int>()->default_value(-1), "number of agents")
+    ("dim,d", po::value<int>()->required(), "cost dimension")
+    ("scenario_file,s", po::value<std::string>()->required(), "Scenario file")
+    ("eps,e", po::value<double>()->default_value(0), "Approximate factor")
+    ("eps_ratio,r", po::value<double>()->default_value(0.8), "eps_HighLevelMerge divided by eps")
+    ("algorithm,a", po::value<std::string>()->default_value("BBMOCBS_pex"), "algorithm")
+    ("c1", po::value<std::string>()->required(), "cost map 1")
+    ("c2", po::value<std::string>()->default_value(""), "cost map 2")
+    ("c3", po::value<std::string>()->default_value(""), "cost map 3")
+    ("CB", po::value<std::string>()->default_value("true"), "if conflict-based")
+    ("eager", po::value<std::string>()->default_value("true"), "if eager")
+
+    ("turn_dim", po::value<int>()->default_value(-1), "dimension with turn cost")
+    ("turn_cost", po::value<int>()->default_value(5), "extra cost for turn action")
     
-    if (vm.count("help")) {
-        std::cout << desc << std::endl;
-        return 1;
-    }
-
-    LoggerPtr logger = nullptr;
-    if (vm["logging_file"].as<std::string>() != ""){
-        logger = new Logger(vm["logging_file"].as<std::string>());
-    }
-
-/********************  Check  Input  Format  *********************/
-    if(vm["algorithm"].as<std::string>() == "BOA" && vm["dim"].as<int>() > 2){
-        std::cout << std::endl << "BOA* only works for cost dimension = 2";
-        exit(1);
-    }
-    MergeStrategy ms = DEFAULT_MERGE_STRATEGY;
-    if(vm["dim"].as<int>() == 3){
-        ms = MergeStrategy::RANDOM;
-    }
-
-
-/*************************  Build  Map  ****************************/
-    Map map;
-    PreProcessor p;
-    std::unordered_map<size_t, std::vector<int>> id2coord;
-    std::vector<std::pair<size_t, size_t>>  start_end;
-    std::vector<Edge>  edges;
-    p.read_map(vm["map"].as<std::string>(), map, id2coord);
-    // p.read_config(vm["config"].as<std::string>(), map, vm["agent_num"].as<int>(), start_end);
-    // p.read_cost(vm["cost"].as<std::string>(), map, edges);
-    // p.generate_cost(map, edges, vm["dim"].as<int>());
-
-    std::ofstream output;
-    if(vm["algorithm"].as<std::string>() == "Apex"){
-        output.open("../output/yes_" + vm["output"].as<std::string>() + "--n=" + std::to_string(vm["agent_num"].as<int>()) + "--" + std::to_string(vm["hem"].as<double>())
-        + ", " + std::to_string(vm["hep"].as<double>()) + ", " + std::to_string(vm["lem"].as<double>()) 
-        + ", " + std::to_string(vm["lep"].as<double>()));
-
-        auto current_time = std::time(nullptr);
-        output << std::ctime(&current_time) << std::endl;
-        output << "Map: " << vm["map"].as<std::string>() << std::endl;
-
-        output << vm["algorithm"].as<std::string>() << ", " << "hem = " << vm["hem"].as<double>() << ", "
-        << "hep = " << vm["hep"].as<double>() << ", lem = " << vm["lem"].as<double>()
-        << ", lep = " << vm["lep"].as<double>() << std::endl << "agent num = " << vm["agent_num"].as<int>() 
-        << std::endl << std::endl;
-    }else{
-        output.open("../output/" + vm["output"].as<std::string>() + "--n=" + std::to_string(vm["agent_num"].as<int>()) 
-        + "--" + vm["algorithm"].as<std::string>());
-        auto current_time = std::time(nullptr);
-        output << std::ctime(&current_time) << std::endl;
-        output << "Map: " << vm["map"].as<std::string>() << std::endl << vm["algorithm"].as<std::string>() << std::endl
-        << "agent num = " << vm["agent_num"].as<int>() 
-        << std::endl << std::endl;
-    }
+    ("solution_num,k", po::value<int>()->default_value(INT64_MAX), "number of solution")
+    ("time_limit,t", po::value<int>()->default_value(120), "cutoff time (seconds)")
     
+    ("output_file,o", po::value<std::string>()->required(), "Name of the output file")
+    ("logging_file", po::value<std::string>()->default_value(""), "logging file" )
+    ;
+po::variables_map vm;
+po::store(po::parse_command_line(argc, argv, desc), vm);
+po::notify(vm);
+
+if (vm.count("help")) {
+    std::cout << desc << std::endl;
+    return 1;
+}
+
+LoggerPtr logger = nullptr;
+if (vm["logging_file"].as<std::string>() != ""){
+    logger = new Logger(vm["logging_file"].as<std::string>());
+}
+
+output.open(vm["output_file"].as<std::string>(), std::ios::app);
+output.seekp(0, std::ios::end);
+/********************  INPUT CONFIG  *********************/
+// init preprocessor
+PreProcessor p;
+
+// import configures
+int dim = vm["dim"].as<int>();
+double eps = vm["eps"].as<double>();
+MergingStrategy ms = vm["CB"].as<std::string>() == "true" ? MergingStrategy::CONFLICT_BASED : MergingStrategy::REVERSE_LEX;
+bool if_eager = vm["eager"].as<std::string>() == "true" ? true : false;
+int turn_dim = vm["turn_dim"].as<int>();
+int turn_cost = vm["turn_cost"].as<int>();
+
+// import map
+Map map;
+map_name = vm["map_file"].as<std::string>();
+p.read_map(map_name, map, id2coord);
+
+// import scenario file
+std::vector<std::pair<size_t, size_t>>  start_goal;
+p.read_scenario(vm["scenario_file"].as<std::string>(), map , vm["agent_num"].as<int>(), start_goal);
+
+// import cost file
+std::vector<Edge>  edges;
+p.cost_init(map, edges, dim);
+for(int i = 0; i < dim; i ++){
+    std::string temp = "c" + std::to_string(i+1);
+    p.read_cost(vm[temp].as<std::string>(), map, edges, i);
+}
 
 
-/**************************  Search  *****************************/
-    Solver      solver;
-    HSolutionID        hsolutions;
-    std::vector<CostVector>    hsolution_costs;
-    const char* directoryPath = (vm["config"].as<std::string>()).c_str();
-    DIR *dir;
-    struct dirent *entry;
-    dir = opendir(directoryPath);
-    int iteration = 0;
-    while ((entry = readdir(dir)) != NULL) {
-        if (entry->d_type == DT_REG) {
-            iteration ++;
-            char filePath[256];
-            snprintf(filePath, sizeof(filePath), "%s/%s", directoryPath, entry->d_name);
-            p.read_config((std::string)filePath, map, vm["agent_num"].as<int>(), start_end);
-            p.generate_cost(map, edges, vm["dim"].as<int>());
-            output << "************************************************************************" << std::endl;
-            output << "ITERATION:  " << iteration << std::endl << std::endl;
-            solver.search(map.graph_size, edges, vm, start_end, ms, logger, hsolutions, hsolution_costs, output);
-            std::cout << "FINISH ONCE" << std::endl;
-        }
-    }
-    map.ddelete();
-    // Solver      solver;
-    // HSolutionID        hsolutions;
-    // std::vector<CostVector>    hsolution_costs;
-
-    // auto start_time = std::chrono::high_resolution_clock::now();    // record time
-    // solver.search(map.graph_size, edges, vm, start_end, ms, logger, hsolutions, hsolution_costs, output);
-    // auto end_time = std::chrono::high_resolution_clock::now();
-    
-    // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-    // delete(logger);
+// initialize solver
+std::unique_ptr<HighLevelSolver> h_solver;
+if(vm["algorithm"].as<std::string>() == "BBMOCBS-eps"){
+    h_solver = std::make_unique<epsSolver>(map.graph_size, vm["agent_num"].as<int>(), Algorithm::BBMOCBS_EPS, if_eager, dim, turn_dim, vm["turn_cost"].as<int>(), vm["time_limit"].as<int>());
+    ((epsSolver*)h_solver.get())->set_eps(eps);
+}else if(vm["algorithm"].as<std::string>() == "BBMOCBS-pex"){
+    h_solver = std::make_unique<pexSolver>(map.graph_size, vm["agent_num"].as<int>(), Algorithm::BBMOCBS_PEX, if_eager, dim, turn_dim, vm["turn_cost"].as<int>(), vm["time_limit"].as<int>());
+    ((pexSolver*)h_solver.get())->set_eps(eps);
+    ((pexSolver*)h_solver.get())->set_merging_strategy(ms);
+}else if(vm["algorithm"].as<std::string>() == "BBMOCBS-k"){
+    h_solver = std::make_unique<kSolver>(map.graph_size, vm["agent_num"].as<int>(), Algorithm::BBMOCBS_K, if_eager, dim, turn_dim, vm["turn_cost"].as<int>(), vm["time_limit"].as<int>());
+    ((kSolver*)h_solver.get())->set_merging_strategy(ms);
+}else{
+    output << std::endl << std::endl << vm["algorithm"].as<std::string>() + " is not an allowed algorithm";
+    exit(1);
+}
 
 
-// /********************  Print  Path  Info  ************************/
-// getchar();
-//     std::cout << endl << endl;
-//     for(size_t num = 0; num < hsolutions.size(); num ++){
-//         std::cout << "SOLUTION   " << num+1 << endl;
-//         std::cout << "COST   " << "{";
-//         if(vm["dim"].as<int>() == 2){
-//             std::cout << hsolution_costs.at(num).at(0) << ", " << hsolution_costs.at(num).at(1);
-//         }else{
-//             std::cout << hsolution_costs.at(num).at(0) << ", " << hsolution_costs.at(num).at(1) << ", " << hsolution_costs.at(num).at(2);
-//         }
-//         std::cout << "}" << endl;
-//         for(size_t i = 0; i < hsolutions.at(num).size(); i++){
-//             std::cout << "agent " << i+1 << ":" << std::endl;
-//             for(size_t id : hsolutions.at(num).at(i)){
-//                 std::cout << "{" << id2coord[id].at(0) << ", " << id2coord[id].at(1) << "}, ";
-//             }
-//             std::cout << endl;
-//         }
-//         std::cout << endl << endl;
-//     }
-//     std::cout << "Total constraint number = " << constraint_num << std::endl;
-//     std::cout << "RUN TIME: " << ((double)duration.count())/1000000.0 << " seconds" << std::endl;
+
+HSolutionID        hsolution_ids;
+std::vector<CostVector>    hsolution_costs;
+
+auto result = h_solver->run(edges, start_goal, hsolution_ids, hsolution_costs, logger);
+
+double HLMergingTime = 0, LowLevelTime = 0, TotalTime = 0;
+int ConflictSolvingNum = 0, SolutionNum = 0;
+
+// success_num ++;
+HLMergingTime = std::get<0>(result);
+LowLevelTime = std::get<1>(result);
+TotalTime = std::get<2>(result);
+ConflictSolvingNum = std::get<3>(result);
+SolutionNum = std::get<4>(result);
+
+// output << std::endl;
+output << std::endl;
+output << "HLMergingTime = " << HLMergingTime << std::endl;
+output << "LowLevelTime = " << LowLevelTime << std::endl;
+output << "Total Time = " << TotalTime << std::endl;
+output << "ConflictSolvingNum = " << ConflictSolvingNum << std::endl;
+output << "SolutionNum = " << SolutionNum << std::endl;
+
+std::cout << "FINISH ONCE" << std::endl;
+
+output.close();
 }
