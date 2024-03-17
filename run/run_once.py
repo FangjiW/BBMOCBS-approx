@@ -10,12 +10,12 @@ unique_file = "unique2.cost"
 
 
 def run_once(map, metric, algorithm, eps, agent_num, eps_ratio=0, CB=True, eager=True, solution_num=sys.maxsize):
-    if(algorithm == "BBMOCBS-K"):
-        return
+    # if(algorithm == "BBMOCBS-K"):
+    #     return
     if eps_ratio == 0.8:
         eps_ratio = 1
-    if eps_ratio == 0:
-        return
+    # if eps_ratio == 0:
+    #     return
     if CB == True and eager == False:
         return
     root_directory = "/home/hacken/SummerResearch/BB/"
@@ -23,7 +23,7 @@ def run_once(map, metric, algorithm, eps, agent_num, eps_ratio=0, CB=True, eager
     scenario_directory = os.path.join(data_directory, "scenario")
     cost_directory = os.path.join(data_directory, "cost")
     map_path = os.path.join(data_directory, map + ".map")
-    exe_path = os.path.relpath(os.path.join(root_directory, "build/bin/multiobj"), os.getcwd())
+    exe_path = os.path.relpath(os.path.join(root_directory, "build/bin/bbmocbs_approx"), os.getcwd())
 
     dim = len(metric)
 
@@ -188,8 +188,8 @@ def run_once(map, metric, algorithm, eps, agent_num, eps_ratio=0, CB=True, eager
                 if_error = True
 
         if not if_error:
-            command = "./{} -m {} -n {} -s {} -e {:.2f} -r {:.1f} -d {} -a {} --CB {} --eager {} --turn_dim {} --turn_cost {} -o {}".format(
-                exe_path, map_path, agent_num, scenario_path, eps, eps_ratio, dim, algorithm, if_CB_, if_eager_, turn_dim, turn_cost, output_file) + solution_num_command 
+            command = "./{} -m {} -n {} -s {} -e {:.2f} -d {} -a {} --CB {} --eager {} --turn_dim {} --turn_cost {} -o {}".format(
+                exe_path, map_path, agent_num, scenario_path, eps, dim, algorithm, if_CB_, if_eager_, turn_dim, turn_cost, output_file) + solution_num_command 
             
             if dim == 2: 
                 command += " --c1 " + cost_map[0] + " --c2 " + cost_map[1]

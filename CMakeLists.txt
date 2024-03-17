@@ -13,7 +13,7 @@ SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -g -Wall")
 
 include_directories("inc")
 
-file(GLOB SOURCES "src/BiCriteria/*.cpp" "src/Utils/*.cpp")
+file(GLOB SOURCES "src/*.cpp" "src/HighLevel/*.cpp" "src/LowLevel/*.cpp" "src/LowLevel/Utils/*.cpp")
 
 # Find Boost
 find_package( Boost REQUIRED COMPONENTS program_options log thread filesystem system)
@@ -22,6 +22,6 @@ include_directories( ${Boost_INCLUDE_DIRS} )
 
 message(${CMAKE_BINARY_DIR})
 
-add_executable(multiobj src/main.cpp ${SOURCES})
+add_executable(bbmocbs_approx src/main.cpp ${SOURCES})
 
-target_link_libraries(multiobj ${Boost_LIBRARIES})
+target_link_libraries(bbmocbs_approx ${Boost_LIBRARIES})

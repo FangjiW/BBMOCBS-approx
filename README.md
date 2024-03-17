@@ -1,10 +1,23 @@
+# BB-MO-CBS-approx
 
-./bin/multiobj -m random-32-32-20 -d 2 -t 60 -a Apex -n 2 --hem 0.1 --hep 0.1 --lem 0.1 --lep 0.1
+We C++ implemented BB-MO-CBS-pex, BB-MO-CBS-k, BB-MO-CBS-$\varepsilon$ , as well as re-implemented BB-MO-CBS. We implemented eager-solution update for BB-MO-CBS-$\varepsilon$, BB-MO-CBS-pex, and BB-MO-CBS-k, and conflict-based merging for BB-MO-CBS-pex and BB-MO-CBS-k.
 
-./bin/multiobj -o output.txt -m ../dataset/random-32-32-10/random-32-32-10.map --config ../dataset/random-32-32-10/random-32-32-10-random-1.scen -c ../dataset/random-32-32-10/random-32-32-10.cost -d 3 -a Apex -n 18 --hem 0.0 --hep 0.1 --lem 0.1 --lep 0.1
+The low level of BB-MO-CBS and BB-MO-CBS-$\varepsilon$ are implemented with BOA* for bi-objective domains and NAMOA*dr for $\geq3$-obejctive domains.
 
-./bin/multiobj -o output.txt -m ../dataset/room-32-32-4/room-32-32-4.map --config ../dataset/room-32-32-4/config -d 3 -a Apex -n 18 --hem 0.0 --hep 0.1 --lem 0.1 --lep 0.1
+You can compile the project by 
 
-剩余：
+```
+mkdir build
+cd build
+cmake ..
+make
+```
 
-1. SIPP
+Cmake will generate `bbmocbs_approx` in the `build/bin` folder.
+
+You can type `bbmocbs_approx --help` to see the expected input arguments.
+
+Example usage:
+```
+./bin/bbmocbs_approx -m ../example/random-32-32-20.map -n 12 -d 2 -s ../example/random-32-32-20-random-1.scen -e 0.05 -a BBMOCBS-pex --c1 ../example/random-1.cost --c2 ../example/random-2.cost --CB true --eager true -t 120 -o ../output.txt
+```

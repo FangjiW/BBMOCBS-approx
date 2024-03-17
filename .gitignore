@@ -1,6 +1,13 @@
 build/
 *.out
-image*
+image/
+image_new/
+image_old/
+BenchMark/
+.vscode/
+post_process/
+resources/
+run/
 
 # make no sense to the project
 test*

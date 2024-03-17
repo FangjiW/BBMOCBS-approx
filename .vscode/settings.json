@@ -59,14 +59,6 @@
         "typeindex": "cpp",
         "typeinfo": "cpp",
         "variant": "cpp",
-        "bit": "cpp",
-        "codecvt": "cpp",
-        "filesystem": "cpp",
-        "run-room-32-32-4": "cpp",
-        "cassert": "cpp",
-        "cerrno": "cpp",
-        "cfloat": "cpp",
-        "ciso646": "cpp",
-        "climits": "cpp"
+        "bit": "cpp"
     }
 }
