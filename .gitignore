@@ -1,6 +1,0 @@
-build/
-output/
-
-# make no sense to the project
-test.cpp    
-learn.md
