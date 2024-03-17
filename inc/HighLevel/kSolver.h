@@ -14,7 +14,7 @@ protected:
     int SOLUTION_NUM;
     MergingStrategy DEFAULT_MS = MergingStrategy::MORE_SLACK;
     MergingStrategy MS;
-    double EPS;
+    double EPS = 0;
 
 
     void MergeJointPaths(HighLevelNodePtr node, int solution_num, double max_eps=INT_MAX);
@@ -28,6 +28,7 @@ protected:
 public:
     kSolver(size_t graph_size, int agent_num, Algorithm algorithm, bool if_eager, int dim, int turn_dim, int turn_cost, int time_limit)
     : HighLevelSolver(graph_size, agent_num, algorithm, if_eager, dim, turn_dim, turn_cost, time_limit){}
-    void set_merging_strategy(MergingStrategy ms){MS = ms;};
+    void set_merging_strategy(MergingStrategy ms){MS = ms;}
+    void set_solution_num(int solution_num){SOLUTION_NUM = solution_num;}
     OutputTuple run(std::vector<Edge>& edges, std::vector<std::pair<size_t, size_t>>& start_end, HSolutionID& hsolution_ids, std::vector<CostVector>& hsolution_costs, LoggerPtr& logger) override;
 };
