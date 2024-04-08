@@ -488,7 +488,7 @@ OutputTuple kSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_t,
                         hsolution_ids.push_back(new_hsolution);
                         hsolution_costs.push_back(real_cost);
                         hsolution_apex_costs.push_back(iter->first);
-                        std::cout << "there is a solution" << std::endl;
+                        std::cout << "find a new solution" << std::endl;
                         
                         MergeUntil(hsolution_apex_costs, hsolution_costs, SOLUTION_NUM);
                         for(int i = 0; i < hsolution_apex_costs.size(); i++){
@@ -572,7 +572,7 @@ OutputTuple kSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_t,
                 hsolution_ids.push_back(new_hsolution);
                 hsolution_costs.push_back(real_cost);
                 hsolution_apex_costs.push_back(node->cur_apex);
-                std::cout << "there is a solution" << std::endl;
+                std::cout << "find a new solution" << std::endl;
 
                 node->all_jps.pop_front();
 

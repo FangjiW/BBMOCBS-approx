@@ -78,7 +78,7 @@ PreProcessor p;
 // import configures
 int dim = vm["dim"].as<int>();
 double eps = vm["eps"].as<double>();
-MergingStrategy ms = vm["CB"].as<std::string>() == "true" ? MergingStrategy::CONFLICT_BASED : MergingStrategy::REVERSE_LEX;
+MergingStrategy ms = vm["CB"].as<std::string>() == "true" ? MergingStrategy::CONFLICT_BASED : MergingStrategy::MORE_SLACK;
 bool if_eager = vm["eager"].as<std::string>() == "true" ? true : false;
 int turn_dim = vm["turn_dim"].as<int>();
 int turn_cost = vm["turn_cost"].as<int>();

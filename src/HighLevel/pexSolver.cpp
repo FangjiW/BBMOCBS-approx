@@ -492,7 +492,8 @@ OutputTuple pexSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_
                     //  merge to SOLUTIONS
                     bool dominated = false;
                     for(int i = 0; i < SOLUTIONS_cost.size(); i++){
-                        if(is_dominated(iter->first, SOLUTIONS_cost.at(i), EPS)){
+                        // if(is_dominated(iter->first, SOLUTIONS_cost.at(i), EPS)){
+                        if(is_dominated(cost, SOLUTIONS_cost.at(i), 0)){
                             SOLUTIONS_apex.at(i) = vector_min(SOLUTIONS_apex.at(i), iter->first);
                             dominated = true;
                             break;
@@ -500,7 +501,8 @@ OutputTuple pexSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_
                     }
                     if(!dominated){
                         for(int i = 0; i < SOLUTIONS_apex.size(); ){
-                            if(is_dominated(SOLUTIONS_apex.at(i), cost, EPS)){
+                            // if(is_dominated(SOLUTIONS_apex.at(i), cost, EPS)){
+                            if(is_dominated(SOLUTIONS_cost.at(i), cost, 0)){
                                 iter->first = vector_min(iter->first, SOLUTIONS_apex.at(i));
                                 SOLUTIONS_apex.erase(SOLUTIONS_apex.begin()+i);
                                 SOLUTIONS_cost.erase(SOLUTIONS_cost.begin()+i);
@@ -550,7 +552,7 @@ OutputTuple pexSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_
         cft = conflict_resolver.DetectConflict(node->all_jps.front(), node->sop_waypoints);
 
         if(std::get<2>(cft).empty()){ // notice: this part is without eager, and each solution cannot be eps-dominated by any solution
-            std::cout << "find a new solution";
+            std::cout << "find a new solution" << std::endl;
             assert(EAGER == false);
             //  merge to SOLUTIONS
             CostVector  cost(node->cur_apex.size(), 0);
@@ -742,54 +744,29 @@ OutputTuple pexSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_
     TotalTime = difftime(end_time, start_time);
 
 
-// // Merge Joint paths
-//     if(ALGORITHM == Algorithm::BBMOCBS_PEX){
-//         for(int i = 0; i < SOLUTIONS_apex.size(); ){
-//             bool is_merged = false;
-//             for(int j = 0; j < i; j++){
-//                 if(is_dominated(SOLUTIONS_apex.at(i), SOLUTIONS_cost.at(j), EPS)){
-//                     SOLUTIONS_apex.at(j) = vector_min(SOLUTIONS_apex.at(i), SOLUTIONS_apex.at(j));
-//                     SOLUTIONS_apex.erase(SOLUTIONS_apex.begin()+i);
-//                     SOLUTIONS_cost.erase(SOLUTIONS_cost.begin()+i);
-                    
-//                     is_merged = true;
-//                     break;
-//                 } 
-//             }
-//             if(!is_merged){
-//                 i ++;
-//             }
-//         }
+/***new added**************************************/
+    auto __SOLUTIONS_apex = SOLUTIONS_apex;
+    auto __SOLUTIONS_cost = SOLUTIONS_cost;
+    
+    SOLUTIONS_cost.clear(); SOLUTIONS_cost.shrink_to_fit();
+    SOLUTIONS_apex.clear(); SOLUTIONS_apex.shrink_to_fit();   
 
-//         MergeBySmallestEps(SOLUTIONS_apex, SOLUTIONS_cost, 0, EPS);
-//     }
-//  post process
-    // if(ALGORITHM == Algorithm::BBMOCBS_K){
-    //     auto _SOLUTIONS_cost = SOLUTIONS_cost;
-    //     auto _SOLUTIONS_apex = SOLUTIONS_apex;
-    //     SOLUTIONS_cost.clear(); SOLUTIONS_apex.clear();
-    //     SOLUTIONS_cost.shrink_to_fit(); SOLUTIONS_apex.shrink_to_fit();
-    //     for(int i = 0; i < _SOLUTIONS_apex.size(); i++){
-    //         bool if_merged = false;
-    //         for(int j = 0; j < SOLUTIONS_apex.size(); j++){
-    //             if(calculate_BF(_SOLUTIONS_apex.at(i), SOLUTIONS_cost.at(j)) < EPS){
-    //                 SOLUTIONS_apex.at(j) = vector_min(SOLUTIONS_apex.at(j), _SOLUTIONS_apex.at(i));
-    //                 if_merged = true;
-    //                 break;
-    //             }
-    //             if(calculate_BF(SOLUTIONS_apex.at(j), _SOLUTIONS_cost.at(i)) < EPS){
-    //                 SOLUTIONS_apex.at(j) = vector_min(SOLUTIONS_apex.at(j), _SOLUTIONS_apex.at(i));
-    //                 SOLUTIONS_cost.at(j) = _SOLUTIONS_cost.at(i);
-    //                 if_merged = true;
-    //                 break;
-    //             }
-    //         }
-    //         if(!if_merged){
-    //             SOLUTIONS_cost.push_back(_SOLUTIONS_cost.at(i));
-    //             SOLUTIONS_apex.push_back(_SOLUTIONS_apex.at(i));
-    //         }
-    //     }
-    // }
+    for(int i = 0; i < __SOLUTIONS_apex.size(); i++){
+        bool dominated = false;
+        for(int j = 0; j < SOLUTIONS_apex.size(); j++){
+            if(is_dominated(__SOLUTIONS_apex.at(i), SOLUTIONS_cost.at(j), EPS)){
+                SOLUTIONS_apex.at(j) = vector_min(SOLUTIONS_apex.at(j), __SOLUTIONS_apex.at(i));
+                dominated = true;
+                break;
+            }
+        }
+        if(!dominated){
+            SOLUTIONS_apex.push_back(__SOLUTIONS_apex.at(i));
+            SOLUTIONS_cost.push_back(__SOLUTIONS_cost.at(i));
+        }
+    }
+/**************************************************/
+
     
     std::vector<std::pair<CostVector, int>> apex_id_list(SOLUTIONS_cost.size());
     auto _SOLUTIONS_cost = SOLUTIONS_cost;
