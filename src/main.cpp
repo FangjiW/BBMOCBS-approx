@@ -141,7 +141,7 @@ output << "HLMergingTime = " << HLMergingTime << std::endl;
 output << "LowLevelTime = " << LowLevelTime << std::endl;
 output << "Total Time = " << TotalTime << std::endl;
 output << "ConflictSolvingNum = " << ConflictSolvingNum << std::endl;
-output << "SolutionNum = " << SolutionNum << std::endl;
+output << "SolutionNum = " << SolutionNum << std::endl << std::endl << std::endl;
 
 std::cout << "FINISH ONCE" << std::endl;
 

@@ -163,9 +163,7 @@ OutputTuple epsSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_
 
     if(difftime(time(NULL), start_time) > TIME_LIMIT){
         output << "FAIL" << std::endl 
-            << "apex cost:" << std::endl 
-            << std::endl 
-            << "real cost:" << std::endl 
+            << "cost:" << std::endl 
             << std::endl << std::endl << std::endl;
 
         return std::make_tuple(HLMergingTime, LowLevelTime, difftime(time(NULL), start_time), 0, 0);
@@ -511,7 +509,7 @@ OutputTuple epsSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_
     }else{
         output << "FAIL" << std::endl;
     }
-    output << "apex cost: " << std::endl;
+    output << "cost: " << std::endl;
     int i = 0;
     for(size_t num = 0; num < hsolution_apex_costs.size(); num ++){
         if(i++ == 7){
@@ -525,21 +523,21 @@ OutputTuple epsSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_
         }
         output << "}, ";
     }
-    output << std::endl;
-    output << "real cost: " << std::endl;
-    int j = 0;
-    for(size_t num = 0; num < hsolution_costs.size(); num ++){
-        if(j++ == 7){
-            output << std::endl;
-            j = 1;
-        }
-        if(DIM == 2){
-            output << "{" << hsolution_costs.at(num).at(0) << ", " << hsolution_costs.at(num).at(1);
-        }else{
-            output << "{" << hsolution_costs.at(num).at(0) << ", " << hsolution_costs.at(num).at(1) << ", " << hsolution_costs.at(num).at(2);
-        }
-        output << "}, ";
-    }
+    // output << std::endl;
+    // output << "real cost: " << std::endl;
+    // int j = 0;
+    // for(size_t num = 0; num < hsolution_costs.size(); num ++){
+    //     if(j++ == 7){
+    //         output << std::endl;
+    //         j = 1;
+    //     }
+    //     if(DIM == 2){
+    //         output << "{" << hsolution_costs.at(num).at(0) << ", " << hsolution_costs.at(num).at(1);
+    //     }else{
+    //         output << "{" << hsolution_costs.at(num).at(0) << ", " << hsolution_costs.at(num).at(1) << ", " << hsolution_costs.at(num).at(2);
+    //     }
+    //     output << "}, ";
+    // }
     output << std::endl << std::endl;
 
     return std::make_tuple(HLMergingTime, LowLevelTime, TotalTime, ConflictSolvingNum, hsolution_costs.size());

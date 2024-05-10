@@ -422,9 +422,9 @@ OutputTuple kSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_t,
 
     if(difftime(time(NULL), start_time) > TIME_LIMIT){
         output << "FAIL" << std::endl 
-            << "apex cost:" << std::endl 
+            << "apex:" << std::endl 
             << std::endl 
-            << "real cost:" << std::endl 
+            << "cost:" << std::endl 
             << std::endl << std::endl << std::endl;
 
         return std::make_tuple(HLMergingTime, LowLevelTime, difftime(time(NULL), start_time), 0, 0);
@@ -801,7 +801,7 @@ OutputTuple kSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_t,
     }else{
         output << "FAIL" << std::endl;
     }
-    output << "apex cost: " << std::endl;
+    output << "apex: " << std::endl;
     int i = 0;
     for(size_t num = 0; num < hsolution_apex_costs.size(); num ++){
         if(i++ == 7){
@@ -816,7 +816,7 @@ OutputTuple kSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_t,
         output << "}, ";
     }
     output << std::endl;
-    output << "real cost: " << std::endl;
+    output << "cost: " << std::endl;
     int j = 0;
     for(size_t num = 0; num < hsolution_costs.size(); num ++){
         if(j++ == 7){

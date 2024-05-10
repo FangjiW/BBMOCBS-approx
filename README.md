@@ -1,6 +1,10 @@
 # BB-MO-CBS-approx
 
-To compile:
+We C++ implemented BB-MO-CBS-pex, BB-MO-CBS-k, BB-MO-CBS-$\varepsilon$ , as well as re-implemented BB-MO-CBS. We implemented eager-solution update for BB-MO-CBS-$\varepsilon$, BB-MO-CBS-pex, and BB-MO-CBS-k, and conflict-based merging for BB-MO-CBS-pex and BB-MO-CBS-k.
+
+The low level of BB-MO-CBS and BB-MO-CBS-$\varepsilon$ are implemented with BOA* for bi-objective domains and NAMOA*dr for $\geq3$-obejctive domains.
+
+You can compile the project by 
 
 ```
 mkdir build
@@ -8,18 +12,12 @@ cd build
 cmake ..
 make
 ```
-To run
+
+Cmake will generate `bbmocbs_approx` in the `build/bin` folder.
+
+You can type `bbmocbs_approx --help` to see the expected input arguments.
+
+Example usage:
 ```
-cd run
-python3 run.py
-```
-To generate figures on page 8 and 9
-```
-cd post_process
-python3 plot.py
-```
-To generate the figure on page 1, select the result of any instance and use the following commands:
-```
-cd post_process
-python3 plot_pareto_frontier.py
+./bin/bbmocbs_approx -m ../example/random-32-32-20.map -n 12 -d 2 -s ../example/random-32-32-20-random.scen -e 0.05 -a BBMOCBS-pex --c1 ../example/random-1.cost --c2 ../example/random-2.cost --CB true --eager true -t 120 -o ../output.txt
 ```
