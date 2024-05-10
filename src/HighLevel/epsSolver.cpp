@@ -113,7 +113,8 @@ void epsSolver::NonDomVec(std::list<JointPathPair>& joint_path_list)
 
 OutputTuple epsSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_t, size_t>>& start_end, HSolutionID& hsolution_ids, std::vector<CostVector>& hsolution_costs, LoggerPtr& logger)
 {
-    time_t end_time;
+    std::chrono::_V2::system_clock::time_point   precise_start_time, precise_end_time;
+    precise_start_time = std::chrono::high_resolution_clock::now();
     std::chrono::_V2::system_clock::time_point t1, t2;
     double duration;
 
@@ -425,9 +426,58 @@ OutputTuple epsSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_
             }
         }
     }
-    end_time = time(NULL); // for timing.
-    TotalTime = difftime(end_time, start_time);
+    precise_end_time = std::chrono::high_resolution_clock::now();
+    TotalTime = (double)(std::chrono::duration_cast<std::chrono::microseconds>(precise_end_time - precise_start_time).count())/1000000.0;
 
+
+// // Merge Joint paths
+//     if(ALGORITHM == Algorithm::BBMOCBS_PEX){
+//         for(int i = 0; i < hsolution_apex_costs.size(); ){
+//             bool is_merged = false;
+//             for(int j = 0; j < i; j++){
+//                 if(is_dominated(hsolution_apex_costs.at(i), hsolution_costs.at(j), EPS)){
+//                     hsolution_apex_costs.at(j) = vector_min(hsolution_apex_costs.at(i), hsolution_apex_costs.at(j));
+//                     hsolution_apex_costs.erase(hsolution_apex_costs.begin()+i);
+//                     hsolution_costs.erase(hsolution_costs.begin()+i);
+                    
+//                     is_merged = true;
+//                     break;
+//                 } 
+//             }
+//             if(!is_merged){
+//                 i ++;
+//             }
+//         }
+
+//         MergeBySmallestEps(hsolution_apex_costs, hsolution_costs, 0, EPS);
+//     }
+//  post process
+    // if(ALGORITHM == Algorithm::BBMOCBS_K){
+    //     auto _hsolution_costs = hsolution_costs;
+    //     auto _hsolution_apex_costs = hsolution_apex_costs;
+    //     hsolution_costs.clear(); hsolution_apex_costs.clear();
+    //     hsolution_costs.shrink_to_fit(); hsolution_apex_costs.shrink_to_fit();
+    //     for(int i = 0; i < _hsolution_apex_costs.size(); i++){
+    //         bool if_merged = false;
+    //         for(int j = 0; j < hsolution_apex_costs.size(); j++){
+    //             if(calculate_BF(_hsolution_apex_costs.at(i), hsolution_costs.at(j)) < EPS){
+    //                 hsolution_apex_costs.at(j) = vector_min(hsolution_apex_costs.at(j), _hsolution_apex_costs.at(i));
+    //                 if_merged = true;
+    //                 break;
+    //             }
+    //             if(calculate_BF(hsolution_apex_costs.at(j), _hsolution_costs.at(i)) < EPS){
+    //                 hsolution_apex_costs.at(j) = vector_min(hsolution_apex_costs.at(j), _hsolution_apex_costs.at(i));
+    //                 hsolution_costs.at(j) = _hsolution_costs.at(i);
+    //                 if_merged = true;
+    //                 break;
+    //             }
+    //         }
+    //         if(!if_merged){
+    //             hsolution_costs.push_back(_hsolution_costs.at(i));
+    //             hsolution_apex_costs.push_back(_hsolution_apex_costs.at(i));
+    //         }
+    //     }
+    // }
     
     std::vector<std::pair<CostVector, int>> apex_id_list(hsolution_costs.size());
     auto _hsolution_costs = hsolution_costs;
@@ -449,7 +499,12 @@ OutputTuple epsSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_
         hsolution_costs.push_back(_hsolution_costs.at(ele.second));
     }
     
-    
+    // if(ALGORITHM == Algorithm::BBMOCBS_K){
+    //     for(int i = 0; i < hsolution_apex_costs.size(); i ++){
+    //         double _eps = calculate_BF(hsolution_apex_costs.at(i), hsolution_costs.at(i));
+    //         EPS = EPS > _eps ? EPS : _eps;
+    //     }
+    // }
 
     if(is_success){
         output << "SUCCESS" << std::endl;

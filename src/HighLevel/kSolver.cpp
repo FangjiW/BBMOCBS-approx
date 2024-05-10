@@ -337,7 +337,8 @@ void kSolver::calculate_CAT(HighLevelNodePtr node, VertexCAT& vertex_cat, EdgeCA
 
 OutputTuple kSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_t, size_t>>& start_goal, HSolutionID& hsolution_ids, std::vector<CostVector>& hsolution_costs, LoggerPtr& logger)
 {
-    time_t end_time;
+    std::chrono::_V2::system_clock::time_point   precise_start_time, precise_end_time;
+    precise_start_time = std::chrono::high_resolution_clock::now();
     std::chrono::_V2::system_clock::time_point t1, t2;
     double duration;
 
@@ -763,8 +764,8 @@ OutputTuple kSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_t,
             }
         }
     }
-    end_time = time(NULL); // for timing.
-    TotalTime = difftime(end_time, start_time);
+    precise_end_time = std::chrono::high_resolution_clock::now();
+    TotalTime = (double)(std::chrono::duration_cast<std::chrono::microseconds>(precise_end_time - precise_start_time).count())/1000000.0;
 
 
     
@@ -831,7 +832,7 @@ OutputTuple kSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_t,
     }
     output << std::endl << std::endl;
     if(ALGORITHM == Algorithm::BBMOCBS_K){
-        output << "EPSilon = " << EPS << std::endl << std::endl;
+        output << "epsilon = " << EPS << std::endl << std::endl;
     }
 
     return std::make_tuple(HLMergingTime, LowLevelTime, TotalTime, ConflictSolvingNum, hsolution_costs.size());

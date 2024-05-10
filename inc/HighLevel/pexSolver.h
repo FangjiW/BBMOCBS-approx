@@ -30,6 +30,8 @@ protected:
     bool HighLevelMerge(std::pair<CostVector, int>& existing_path, std::pair<CostVector, int>& new_path, CostVector& real_cost1, 
         CostVector& real_cost2, int conflict_num1, int conflict_num2, MergingStrategy ms, double eps);
     void PruneApproxDom(std::list<JointPathPair>& jp_list, std::vector<CostVector>& SOLUTIONS_apex, std::vector<CostVector>& SOLUTIONS_cost, double eps);
+    void AddSolution(CostVector& apex, CostVector& cost, std::vector<std::vector<size_t>>& waypoints, std::vector<CostVector>& SOLUTIONS_apex, std::vector<CostVector>& SOLUTIONS_cost, HSolutionID& SOLUTIONS_waypoints);
+    void EagerSolutionUpdate(HighLevelNodePtr node, std::vector<CostVector>& SOLUTIONS_apex, std::vector<CostVector>& SOLUTIONS_cost, HSolutionID& SOLUTIONS_waypoints);
     void calculate_CAT(HighLevelNodePtr node, VertexCAT& vertex_cat, EdgeCAT& edge_cat, int agent_id);
-    void MergeToSet();
+    void post_process(std::vector<CostVector>& SOLUTIONS_apex, std::vector<CostVector>& SOLUTIONS_cost);
 };

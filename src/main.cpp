@@ -112,7 +112,7 @@ if(vm["algorithm"].as<std::string>() == "BBMOCBS-eps"){
 }else if(vm["algorithm"].as<std::string>() == "BBMOCBS-k"){
     h_solver = std::make_unique<kSolver>(map.graph_size, vm["agent_num"].as<int>(), Algorithm::BBMOCBS_K, if_eager, dim, turn_dim, vm["turn_cost"].as<int>(), vm["time_limit"].as<int>());
     ((kSolver*)h_solver.get())->set_merging_strategy(ms);
-    ((kSolver*)h_solver.get())->set_solution_num(ms);
+    ((kSolver*)h_solver.get())->set_solution_num(vm["solution_num"].as<int>());
 }else{
     output << std::endl << std::endl << vm["algorithm"].as<std::string>() + " is not an allowed algorithm";
     exit(1);

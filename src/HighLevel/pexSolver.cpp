@@ -15,6 +15,7 @@ extern std::string map_name;
 extern std::ofstream output;
 
 
+
 void pexSolver::MergeJointPaths(HighLevelNodePtr node, MergingStrategy ms, double eps, int agent_id)
 {
     for(auto e : node->sop_waypoints){
@@ -51,9 +52,9 @@ void pexSolver::MergeJointPaths(HighLevelNodePtr node, MergingStrategy ms, doubl
             std::vector<CostVector>     _real_costs_vector(real_costs_vector);
             std::vector<std::vector<size_t>>    _ids_vector(ids_vector);
             
-            apex_idx_combos.clear();
-            real_costs_vector.clear(); 
-            ids_vector.clear(); 
+            apex_idx_combos = std::list<std::pair<CostVector, int>>();
+            real_costs_vector = std::vector<CostVector>();
+            ids_vector = std::vector<std::vector<size_t>>(); 
 
             int new_id = 0;
             for(const auto& apex_id_combo : _apex_idx_combos){
@@ -72,9 +73,6 @@ void pexSolver::MergeJointPaths(HighLevelNodePtr node, MergingStrategy ms, doubl
             apex_idx_combos.sort([](const std::pair<CostVector, int>& a, std::pair<CostVector, int>& b){
                 return less_than_pair<std::pair<CostVector, int>>(a, b);});       
             NonDomVec(apex_idx_combos, real_costs_vector, ids_vector, conflict_nums_vector, ms, eps);
-
-            real_costs_vector.shrink_to_fit();
-            ids_vector.shrink_to_fit();
         }
     }else{
         if((time(NULL) - start_time)/CLOCKS_PER_SEC > TIME_LIMIT){
@@ -126,6 +124,7 @@ void pexSolver::MergeJointPaths(HighLevelNodePtr node, MergingStrategy ms, doubl
     std::cout << node->all_jps.size() << std::endl;
     // getchar();
 }
+
 
 
 void pexSolver::NonDomVec(std::list<std::pair<CostVector, int>>& apex_idx_combos, std::vector<CostVector>& real_costs_vector, std::vector<std::vector<size_t>>& ids_vector, 
@@ -365,6 +364,56 @@ void pexSolver::PruneApproxDom(std::list<JointPathPair>& jp_list, std::vector<Co
 }
 
 
+
+void pexSolver::AddSolution(CostVector& apex, CostVector& cost, std::vector<std::vector<size_t>>& waypoints, std::vector<CostVector>& SOLUTIONS_apex, std::vector<CostVector>& SOLUTIONS_cost, HSolutionID& SOLUTIONS_waypoints)
+{
+    for(int i = 0; i < SOLUTIONS_cost.size(); ){
+        if(is_dominated(cost, SOLUTIONS_cost.at(i))){
+            SOLUTIONS_apex.at(i) = vector_min(SOLUTIONS_apex.at(i), apex);
+            return;
+        }else if(is_dominated(SOLUTIONS_cost.at(i), cost)){
+            apex = vector_min(apex, SOLUTIONS_apex.at(i));
+            SOLUTIONS_apex.erase(SOLUTIONS_apex.begin() + i);
+            SOLUTIONS_cost.erase(SOLUTIONS_cost.begin() + i);
+            SOLUTIONS_waypoints.erase(SOLUTIONS_waypoints.begin() + i);
+        }else{
+            i ++;
+        }
+    }
+
+    SOLUTIONS_waypoints.push_back(waypoints);
+    SOLUTIONS_cost.push_back(cost);
+    SOLUTIONS_apex.push_back(apex);
+}
+
+
+void pexSolver::EagerSolutionUpdate(HighLevelNodePtr node, std::vector<CostVector>& SOLUTIONS_apex, std::vector<CostVector>& SOLUTIONS_cost, HSolutionID& SOLUTIONS_waypoints)
+{
+    static ConflictResolver conflict_resolver;
+    static std::tuple<int, int, std::vector<size_t>, size_t> cft;
+    
+    for(auto iter = node->all_jps.begin(); iter != node->all_jps.end(); ){
+        cft = conflict_resolver.DetectConflict(*iter, node->sop_waypoints);
+        if(std::get<2>(cft).empty()){
+            std::cout << "find a new solution" << std::endl;
+            
+            CostVector  cost(iter->first.size(), 0);
+            std::vector<std::vector<size_t>> waypoints;
+            for(int i = 0; i < AGENT_NUM; i++){
+                add_cost(cost, node->sop_cost.at(i)[iter->second.at(i)]);
+                waypoints.push_back(node->sop_waypoints.at(i)[iter->second.at(i)]);
+            }
+
+            AddSolution(iter->first, cost, waypoints, SOLUTIONS_apex, SOLUTIONS_cost, SOLUTIONS_waypoints);
+
+            iter = node->all_jps.erase(iter);
+            continue;
+        }else{
+            iter ++;
+        }
+    }
+}
+
 void pexSolver::calculate_CAT(HighLevelNodePtr node, VertexCAT& vertex_cat, EdgeCAT& edge_cat, int agent_id)
 {
     vertex_cat.clear(); edge_cat.clear();
@@ -395,10 +444,55 @@ void pexSolver::calculate_CAT(HighLevelNodePtr node, VertexCAT& vertex_cat, Edge
 }
 
 
+void pexSolver::post_process(std::vector<CostVector>& SOLUTIONS_apex, std::vector<CostVector>& SOLUTIONS_cost){
+    auto _SOLUTIONS_apex = SOLUTIONS_apex;
+    auto _SOLUTIONS_cost = SOLUTIONS_cost;
+    
+    SOLUTIONS_cost = std::vector<CostVector>();
+    SOLUTIONS_apex = std::vector<CostVector>();
+
+    for(int i = 0; i < _SOLUTIONS_apex.size(); i++){
+        bool dominated = false;
+        for(int j = 0; j < SOLUTIONS_apex.size(); j++){
+            if(is_dominated(_SOLUTIONS_apex.at(i), SOLUTIONS_cost.at(j), EPS)){
+                SOLUTIONS_apex.at(j) = vector_min(SOLUTIONS_apex.at(j), _SOLUTIONS_apex.at(i));
+                dominated = true;
+                break;
+            }
+        }
+        if(!dominated){
+            SOLUTIONS_apex.push_back(_SOLUTIONS_apex.at(i));
+            SOLUTIONS_cost.push_back(_SOLUTIONS_cost.at(i));
+        }
+    }
+    
+    
+    std::vector<std::pair<CostVector, int>> apex_id_list(SOLUTIONS_apex.size());
+    for(int i = 0; i < SOLUTIONS_apex.size(); i++){
+        apex_id_list.at(i) = std::make_pair(SOLUTIONS_apex.at(i), i);
+    }
+    
+    SOLUTIONS_cost = std::vector<CostVector>();
+    SOLUTIONS_apex = std::vector<CostVector>();
+    std::sort(apex_id_list.begin(), apex_id_list.end(), [](const std::pair<CostVector, int>& a, const std::pair<CostVector, int>& b){
+        for(int i = 0; i < a.first.size(); i++){
+            if(a.first.at(i) != b.first.at(i)){
+                return a.first.at(i) < b.first.at(i);
+            }
+        }
+        return true;
+    });
+    for(auto ele: apex_id_list){
+        SOLUTIONS_apex.push_back(ele.first);
+        SOLUTIONS_cost.push_back(_SOLUTIONS_cost.at(ele.second));
+    }
+}
+
 OutputTuple pexSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_t, size_t>>& start_goal, HSolutionID& SOLUTIONS_waypoints, std::vector<CostVector>& SOLUTIONS_cost, LoggerPtr& logger)
 {
 // variables
-    time_t end_time;
+    std::chrono::_V2::system_clock::time_point   precise_start_time, precise_end_time;
+    precise_start_time = std::chrono::high_resolution_clock::now();
     std::chrono::_V2::system_clock::time_point t1, t2;
     double duration;
 
@@ -409,12 +503,15 @@ OutputTuple pexSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_
     int conflict_splits = 0, SolutionNum = 0;
 
     ConflictResolver conflict_resolver;
+    std::tuple<int, int, std::vector<size_t>, size_t> cft;
 
     start_time = time(NULL);
     HLQueue open_list;
 
     VertexCAT  vertex_cat;
     EdgeCAT    edge_cat;
+
+    HighLevelNodePtr node, new_node;
 
 // calculate heuristic
     std::vector<Heuristic> heuristics(AGENT_NUM);
@@ -426,29 +523,29 @@ OutputTuple pexSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_
     }
 
 //  initialize open_list
-    HighLevelNodePtr root_node = std::make_shared<HighLevelNode>(AGENT_NUM);
+    node = std::make_shared<HighLevelNode>(AGENT_NUM);
 
     for(size_t i = 0; i < AGENT_NUM; i ++){
         t1 = std::chrono::high_resolution_clock::now();
         if(MS == MergingStrategy::CONFLICT_BASED){
             single_run_map(GRAPH_SIZE, graph, heuristics.at(i), start_goal.at(i).first, start_goal.at(i).second, 
-                LSOLVER, EPS, DEFAULT_MS, logger, TIME_LIMIT, root_node->sop_waypoints.at(i), root_node->sop_apex.at(i), root_node->sop_cost.at(i), 
-                root_node->vertex_constraints.at(i), root_node->edge_constraints.at(i), vertex_cat, edge_cat, root_node->conflict_num, TURN_DIM, TURN_COST);
+                LSOLVER, EPS, DEFAULT_MS, logger, TIME_LIMIT, node->sop_waypoints.at(i), node->sop_apex.at(i), node->sop_cost.at(i), 
+                node->vertex_constraints.at(i), node->edge_constraints.at(i), vertex_cat, edge_cat, node->conflict_num, TURN_DIM, TURN_COST);
         }else{
             single_run_map(GRAPH_SIZE, graph, heuristics.at(i), start_goal.at(i).first, start_goal.at(i).second, 
-                LSOLVER, EPS, MS, logger, TIME_LIMIT, root_node->sop_waypoints.at(i), root_node->sop_apex.at(i), root_node->sop_cost.at(i), 
-                root_node->vertex_constraints.at(i), root_node->edge_constraints.at(i), vertex_cat, edge_cat, root_node->conflict_num, TURN_DIM, TURN_COST);
+                LSOLVER, EPS, MS, logger, TIME_LIMIT, node->sop_waypoints.at(i), node->sop_apex.at(i), node->sop_cost.at(i), 
+                node->vertex_constraints.at(i), node->edge_constraints.at(i), vertex_cat, edge_cat, node->conflict_num, TURN_DIM, TURN_COST);
         }
         t2 = std::chrono::high_resolution_clock::now();
         duration = (double)(std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count())/1000000.0;
         LowLevelTime += duration;
-        std::cout << "Agent ID: " << i << " Low Level Time = " << duration << "  size = " << root_node->sop_waypoints.at(i).size() << std::endl;
+        std::cout << "Agent ID: " << i << " Low Level Time = " << duration << "  size = " << node->sop_waypoints.at(i).size() << std::endl;
     }
 
     if(MS == MergingStrategy::CONFLICT_BASED){
-        MergeJointPaths(root_node, DEFAULT_MS, EPS);
+        MergeJointPaths(node, DEFAULT_MS, EPS);
     }else{
-        MergeJointPaths(root_node, MS, EPS);
+        MergeJointPaths(node, MS, EPS);
     }
 
     if(difftime(time(NULL), start_time) > TIME_LIMIT){
@@ -461,11 +558,10 @@ OutputTuple pexSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_
         return std::make_tuple(HLMergingTime, LowLevelTime, difftime(time(NULL), start_time), 0, 0);
     }
 
-    root_node->cur_ids = root_node->all_jps.front().second;
-    root_node->cur_apex = root_node->all_jps.front().first;
-    open_list.insert(root_node);
+    node->cur_ids = node->all_jps.front().second;
+    node->cur_apex = node->all_jps.front().first;
+    open_list.insert(node);
 
-    std::tuple<int, int, CostVector, size_t> cft;
 //  main loop    
     while(!open_list.empty())
     {
@@ -473,67 +569,18 @@ OutputTuple pexSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_
             is_success = false;
             break;
         }
-        auto node = open_list.pop();
+        node = open_list.pop();
 
         auto current_path = node->all_jps.front();
 
-    // eager solution update
+    // Eager Solution Update
         if(EAGER){
-            for(auto iter = node->all_jps.begin(); iter != node->all_jps.end(); ){
-                cft = conflict_resolver.DetectConflict(*iter, node->sop_waypoints);
-                if(std::get<2>(cft).empty()){
-                    std::cout << "find a new solution" << std::endl;
-                    // calculate cost
-                    CostVector  cost(iter->first.size(), 0);
-                    for(int i = 0; i < AGENT_NUM; i++){
-                        add_cost(cost, node->sop_cost.at(i)[iter->second.at(i)]);
-                    }
-
-                    //  merge to SOLUTIONS
-                    bool dominated = false;
-                    for(int i = 0; i < SOLUTIONS_cost.size(); i++){
-                        // if(is_dominated(iter->first, SOLUTIONS_cost.at(i), EPS)){
-                        if(is_dominated(cost, SOLUTIONS_cost.at(i), 0)){
-                            SOLUTIONS_apex.at(i) = vector_min(SOLUTIONS_apex.at(i), iter->first);
-                            dominated = true;
-                            break;
-                        }
-                    }
-                    if(!dominated){
-                        for(int i = 0; i < SOLUTIONS_apex.size(); ){
-                            // if(is_dominated(SOLUTIONS_apex.at(i), cost, EPS)){
-                            if(is_dominated(SOLUTIONS_cost.at(i), cost, 0)){
-                                iter->first = vector_min(iter->first, SOLUTIONS_apex.at(i));
-                                SOLUTIONS_apex.erase(SOLUTIONS_apex.begin()+i);
-                                SOLUTIONS_cost.erase(SOLUTIONS_cost.begin()+i);
-                                SOLUTIONS_waypoints.erase(SOLUTIONS_waypoints.begin()+i);
-                            }else{
-                                i++;
-                            }
-                        }
-
-                        std::vector<std::vector<size_t>> solution_waypoints;
-                        for(int i = 0; i < AGENT_NUM; i ++){
-                            solution_waypoints.push_back(node->sop_waypoints.at(i)[iter->second.at(i)]);
-                        }
-                        SOLUTIONS_waypoints.push_back(solution_waypoints);
-                        SOLUTIONS_cost.push_back(cost);
-                        SOLUTIONS_apex.push_back(iter->first);
-                    }
-
-                    iter = node->all_jps.erase(iter);
-                    continue;
-                }else{
-                    iter ++;
-                }
-            }
-
-            if(node->all_jps.empty()){
-                continue;
-            }
+            EagerSolutionUpdate(node, SOLUTIONS_apex, SOLUTIONS_cost, SOLUTIONS_waypoints);
         }
 
-
+        if(node->all_jps.empty()){
+            continue;
+        }
 
     //  DomPrune
         PruneApproxDom(node->all_jps, SOLUTIONS_apex, SOLUTIONS_cost, EPS);
@@ -551,45 +598,18 @@ OutputTuple pexSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_
 
         cft = conflict_resolver.DetectConflict(node->all_jps.front(), node->sop_waypoints);
 
-        if(std::get<2>(cft).empty()){ // notice: this part is without eager, and each solution cannot be eps-dominated by any solution
+    // add to SOLUTION
+        if(std::get<2>(cft).empty()){  assert(EAGER == false);
             std::cout << "find a new solution" << std::endl;
-            assert(EAGER == false);
-            //  merge to SOLUTIONS
+
             CostVector  cost(node->cur_apex.size(), 0);
+            std::vector<std::vector<size_t>> waypoints;
             for(int i = 0; i < AGENT_NUM; i++){
                 add_cost(cost, node->sop_cost.at(i)[node->cur_ids.at(i)]);
+                waypoints.push_back(node->sop_waypoints.at(i)[node->cur_ids.at(i)]);
             }
 
-            for(int i = 0; i < SOLUTIONS_apex.size(); ){
-                if(is_dominated(SOLUTIONS_apex.at(i), cost, EPS)){
-                    node->cur_apex = vector_min(node->cur_apex, SOLUTIONS_apex.at(i));
-                    SOLUTIONS_apex.erase(SOLUTIONS_apex.begin()+i);
-                    SOLUTIONS_cost.erase(SOLUTIONS_cost.begin()+i);
-                    SOLUTIONS_waypoints.erase(SOLUTIONS_waypoints.begin()+i);
-                }else{
-                    i ++;
-                }
-            }
-
-            // int flag = 0;
-            // for(auto iter1 = SOLUTIONS_apex.begin(); iter1 != SOLUTIONS_apex.end(); ){
-            //     if(is_dominated(*iter1, cost, EPS)){
-            //         node->cur_apex = vector_min(node->cur_apex, *iter1);
-            //         iter1 = SOLUTIONS_apex.erase(iter1);
-            //         SOLUTIONS_cost.erase(SOLUTIONS_cost.begin()+flag);
-            //         SOLUTIONS_waypoints.erase(SOLUTIONS_waypoints.begin()+flag);
-            //     }else{
-            //         flag ++;
-            //         iter1 ++;
-            //     }
-            // }
-            std::vector<std::vector<size_t>> solution_waypoints;
-            for(int i = 0; i < AGENT_NUM; i ++){
-                solution_waypoints.push_back(node->sop_waypoints.at(i)[node->cur_ids.at(i)]);
-            }
-            SOLUTIONS_waypoints.push_back(solution_waypoints);
-            SOLUTIONS_cost.push_back(cost);
-            SOLUTIONS_apex.push_back(node->cur_apex);
+            AddSolution(node->cur_apex, cost, waypoints, SOLUTIONS_apex, SOLUTIONS_cost, SOLUTIONS_waypoints);
 
             node->all_jps.pop_front();
 
@@ -604,7 +624,7 @@ OutputTuple pexSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_
             continue;
         }
         
-        // print conflict info
+    // print conflict info
         conflict_splits ++;
         if (conflict_splits % (500/AGENT_NUM) == 0) {
             std::cout << "[INFO] * Solver::Search, after " << conflict_splits << " conflict splits " 
@@ -613,181 +633,81 @@ OutputTuple pexSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_
         }
 
 
-        if(std::get<2>(cft).size() == 1){   // vertex conflict, split 1 or 2 constraints
-            for(int i = 0; i < 2; i ++){
-                int agent_id = i == 0 ? std::get<0>(cft) : std::get<1>(cft);
-                if(agent_id < 0){
-                    continue;
-                }
-                auto new_node = std::make_shared<HighLevelNode>(*node);
-                new_node->sop_waypoints.at(agent_id).clear();
-                new_node->sop_apex.at(agent_id).clear();
-                new_node->sop_cost.at(agent_id).clear();
-                new_node->conflict_num.clear();
-                new_node->all_jps.clear();
+    // Split Node
+        for(int i = 0; i < 2; i++){
+            int agent_id = i == 0 ? std::get<0>(cft) : std::get<1>(cft);
 
-                t1 = std::chrono::high_resolution_clock::now();
-                if(MS == MergingStrategy::CONFLICT_BASED){
-                    MergeJointPaths(new_node, DEFAULT_MS, EPS, agent_id);
-                }
-                t2 = std::chrono::high_resolution_clock::now();
-                duration = (double)(std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count())/1000000.0;
-                HLMergingTime += duration;
+            if(agent_id < 0){
+                continue;
+            }
+            
+            new_node = std::make_shared<HighLevelNode>(*node);
 
+            new_node->sop_waypoints.at(agent_id).clear();
+            new_node->sop_apex.at(agent_id).clear();
+            new_node->sop_cost.at(agent_id).clear();
+            new_node->conflict_num.clear();
+            new_node->all_jps.clear();
+
+            t1 = std::chrono::high_resolution_clock::now();
+            if(MS == MergingStrategy::CONFLICT_BASED){
+                MergeJointPaths(new_node, DEFAULT_MS, EPS, agent_id);
+            }
+            t2 = std::chrono::high_resolution_clock::now();
+            duration = (double)(std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count())/1000000.0;
+            HLMergingTime += duration;
+
+            if(std::get<2>(cft).size() == 1){
                 conflict_resolver.AddConstraint(new_node->vertex_constraints, agent_id, std::get<2>(cft).front(), std::get<3>(cft));
-
-            //  Low Level Search
-                if(MS == MergingStrategy::CONFLICT_BASED){
-                    calculate_CAT(node, vertex_cat, edge_cat, agent_id);
-                }
-
-                t1 = std::chrono::high_resolution_clock::now();
-                single_run_map(GRAPH_SIZE, graph, heuristics.at(agent_id), start_goal.at(agent_id).first, start_goal.at(agent_id).second, 
-                    LSOLVER, EPS, MS, logger, TIME_LIMIT, new_node->sop_waypoints.at(agent_id),  
-                    new_node->sop_apex.at(agent_id), new_node->sop_cost.at(agent_id), 
-                    new_node->vertex_constraints[agent_id], new_node->edge_constraints[agent_id], vertex_cat, edge_cat, new_node->conflict_num, TURN_DIM, TURN_COST); 
-
-
-                t2 = std::chrono::high_resolution_clock::now();
-                duration = (double)(std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count())/1000000.0;
-                LowLevelTime += duration;
-                std::cout << "LowLevelTime = " << duration << std::endl;
-
-                if(new_node->sop_waypoints.at(agent_id).empty()){
-                    continue;
-                }
-
-            //  Calculate NonDomSet
-                t1 = std::chrono::high_resolution_clock::now();
-
-                if(MS == MergingStrategy::CONFLICT_BASED){
-                    MergeJointPaths(new_node, MergingStrategy::CONFLICT_BASED, EPS, agent_id);
-                }else{
-                    MergeJointPaths(new_node, MS, EPS);
-                }
-
-                if(difftime(time(NULL), start_time) > TIME_LIMIT){
-                    is_success = false;
-                    continue;
-                }
-                t2 = std::chrono::high_resolution_clock::now();
-                duration = (double)(std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count())/1000000.0;
-                HLMergingTime += duration;
-                
-                new_node->cur_ids = new_node->all_jps.front().second;
-                new_node->cur_apex = new_node->all_jps.front().first;
-                open_list.insert(new_node);
-            }
-
-        }else{  //  edge conflict
-            for(int i = 0; i < 2; i++){
-                int agent_id = i == 0 ? std::get<0>(cft) : std::get<1>(cft);
-                auto new_node = std::make_shared<HighLevelNode>(*node);
-                new_node->sop_waypoints.at(agent_id).clear();
-                new_node->sop_apex.at(agent_id).clear();
-                new_node->sop_cost.at(agent_id).clear();
-                new_node->conflict_num.clear();
-                new_node->all_jps.clear();
-
-                t1 = std::chrono::high_resolution_clock::now();
-                if(MS == MergingStrategy::CONFLICT_BASED){
-                    MergeJointPaths(new_node, DEFAULT_MS, EPS, agent_id);
-                }
-                t2 = std::chrono::high_resolution_clock::now();
-                duration = (double)(std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count())/1000000.0;
-                HLMergingTime += duration;
-
+            }else{
                 conflict_resolver.AddConstraint(new_node->edge_constraints, agent_id, std::get<2>(cft).at(i), std::get<2>(cft).at(1-i), std::get<3>(cft));
-
-                if(MS == MergingStrategy::CONFLICT_BASED){
-                    calculate_CAT(node, vertex_cat, edge_cat, agent_id);
-                }
-
-                t1 = std::chrono::high_resolution_clock::now();
-                single_run_map(GRAPH_SIZE, graph, heuristics.at(agent_id), start_goal.at(agent_id).first, start_goal.at(agent_id).second, 
-                    LSOLVER, EPS, MS, logger, TIME_LIMIT, new_node->sop_waypoints.at(agent_id), 
-                    new_node->sop_apex.at(agent_id), new_node->sop_cost.at(agent_id), 
-                    new_node->vertex_constraints[agent_id], new_node->edge_constraints[agent_id], vertex_cat, edge_cat, new_node->conflict_num, TURN_DIM, TURN_COST);
-                t2 = std::chrono::high_resolution_clock::now();
-                duration = (double)(std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count())/1000000.0;
-                std::cout << "LowLevelTime = " << duration << std::endl;
-                LowLevelTime += duration;
-
-                if(new_node->sop_waypoints.at(agent_id).empty()){
-                    continue;
-                }
-
-            //  Calculate NonDomSet
-                t1 = std::chrono::high_resolution_clock::now();
-
-                if(MS == MergingStrategy::CONFLICT_BASED){
-                    MergeJointPaths(new_node, MergingStrategy::CONFLICT_BASED, EPS, agent_id);
-                }else{
-                    MergeJointPaths(new_node, MS, EPS);
-                }
-
-                if(difftime(time(NULL), start_time) > TIME_LIMIT){
-                    is_success = false;
-                    continue;
-                }
-                t2 = std::chrono::high_resolution_clock::now();
-                duration = (double)(std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count())/1000000.0;
-                HLMergingTime += duration;
-                
-                new_node->cur_ids = new_node->all_jps.front().second;
-                new_node->cur_apex = new_node->all_jps.front().first;
-                open_list.insert(new_node);
             }
-        }
-    }
-    end_time = time(NULL); // for timing.
-    TotalTime = difftime(end_time, start_time);
 
-
-/***new added**************************************/
-    auto __SOLUTIONS_apex = SOLUTIONS_apex;
-    auto __SOLUTIONS_cost = SOLUTIONS_cost;
-    
-    SOLUTIONS_cost.clear(); SOLUTIONS_cost.shrink_to_fit();
-    SOLUTIONS_apex.clear(); SOLUTIONS_apex.shrink_to_fit();   
-
-    for(int i = 0; i < __SOLUTIONS_apex.size(); i++){
-        bool dominated = false;
-        for(int j = 0; j < SOLUTIONS_apex.size(); j++){
-            if(is_dominated(__SOLUTIONS_apex.at(i), SOLUTIONS_cost.at(j), EPS)){
-                SOLUTIONS_apex.at(j) = vector_min(SOLUTIONS_apex.at(j), __SOLUTIONS_apex.at(i));
-                dominated = true;
-                break;
+            if(MS == MergingStrategy::CONFLICT_BASED){
+                calculate_CAT(node, vertex_cat, edge_cat, agent_id);
             }
-        }
-        if(!dominated){
-            SOLUTIONS_apex.push_back(__SOLUTIONS_apex.at(i));
-            SOLUTIONS_cost.push_back(__SOLUTIONS_cost.at(i));
-        }
-    }
-/**************************************************/
 
-    
-    std::vector<std::pair<CostVector, int>> apex_id_list(SOLUTIONS_cost.size());
-    auto _SOLUTIONS_cost = SOLUTIONS_cost;
-    for(int i = 0; i < SOLUTIONS_cost.size(); i++){
-        apex_id_list.at(i) = std::make_pair(SOLUTIONS_apex.at(i), i);
-    }
-    SOLUTIONS_cost.clear(); SOLUTIONS_cost.shrink_to_fit();
-    SOLUTIONS_apex.clear(); SOLUTIONS_apex.shrink_to_fit();    
-    std::sort(apex_id_list.begin(), apex_id_list.end(), [](const std::pair<CostVector, int>& a, const std::pair<CostVector, int>& b){
-        for(int i = 0; i < a.first.size(); i++){
-            if(a.first.at(i) != b.first.at(i)){
-                return a.first.at(i) < b.first.at(i);
+            t1 = std::chrono::high_resolution_clock::now();
+            single_run_map(GRAPH_SIZE, graph, heuristics.at(agent_id), start_goal.at(agent_id).first, start_goal.at(agent_id).second, 
+                LSOLVER, EPS, MS, logger, TIME_LIMIT, new_node->sop_waypoints.at(agent_id), 
+                new_node->sop_apex.at(agent_id), new_node->sop_cost.at(agent_id), 
+                new_node->vertex_constraints[agent_id], new_node->edge_constraints[agent_id], vertex_cat, edge_cat, new_node->conflict_num, TURN_DIM, TURN_COST);
+            t2 = std::chrono::high_resolution_clock::now();
+            duration = (double)(std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count())/1000000.0;
+            std::cout << "LowLevelTime = " << duration << std::endl;
+            LowLevelTime += duration;
+
+            if(new_node->sop_waypoints.at(agent_id).empty()){
+                continue;
             }
+
+        //  Calculate NonDomSet
+            t1 = std::chrono::high_resolution_clock::now();
+
+            if(MS == MergingStrategy::CONFLICT_BASED){
+                MergeJointPaths(new_node, MergingStrategy::CONFLICT_BASED, EPS, agent_id);
+            }else{
+                MergeJointPaths(new_node, MS, EPS);
+            }
+
+            if(difftime(time(NULL), start_time) > TIME_LIMIT){
+                is_success = false;
+                continue;
+            }
+            t2 = std::chrono::high_resolution_clock::now();
+            duration = (double)(std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count())/1000000.0;
+            HLMergingTime += duration;
+            
+            new_node->cur_ids = new_node->all_jps.front().second;
+            new_node->cur_apex = new_node->all_jps.front().first;
+            open_list.insert(new_node);
         }
-        return true;
-    });
-    for(auto ele: apex_id_list){
-        SOLUTIONS_apex.push_back(ele.first);
-        SOLUTIONS_cost.push_back(_SOLUTIONS_cost.at(ele.second));
     }
+
+    precise_end_time = std::chrono::high_resolution_clock::now();
+    TotalTime = (double)(std::chrono::duration_cast<std::chrono::microseconds>(precise_end_time - precise_start_time).count())/1000000.0;
     
+    post_process(SOLUTIONS_apex, SOLUTIONS_cost);
 
     if(is_success){
         output << "SUCCESS" << std::endl;
@@ -824,9 +744,6 @@ OutputTuple pexSolver::run(std::vector<Edge>& edges, std::vector<std::pair<size_
         output << "}, ";
     }
     output << std::endl << std::endl;
-    if(ALGORITHM == Algorithm::BBMOCBS_K){
-        output << "EPSilon = " << EPS << std::endl << std::endl;
-    }
 
     return std::make_tuple(HLMergingTime, LowLevelTime, TotalTime, conflict_splits, SOLUTIONS_cost.size());
 }
