@@ -13,25 +13,10 @@ cd build
 cmake ..
 make
 ```
-To run
-```
-cd run
-python3 run.py
-```
-To generate figures on page 8 and 9
-```
-cd post_process
-python3 plot.py
-```
-To generate the figure on page 1, select the result of any instance and use the following commands:
-
-Cmake will generate `bbmocbs_approx` in the `build/bin` folder.
 
 You can type `bbmocbs_approx --help` to see the expected input arguments.
 
 Example usage:
 ```
-cd post_process
-python3 plot_pareto_frontier.py
 ./bin/bbmocbs_approx -m ../example/random-32-32-20.map -n 12 -d 2 -s ../example/random-32-32-20-random.scen -e 0.05 -a BBMOCBS-pex --c1 ../example/random-1.cost --c2 ../example/random-2.cost --CB true --eager true -t 120 -o ../output.txt
 ```
