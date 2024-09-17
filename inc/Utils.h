@@ -18,7 +18,7 @@ bool less_than_pair(const T &a, const T &b)
 
 struct less_than_vector
 {
-    bool operator()(const CostVector &a, const CostVector &b){
+    bool operator()(const CostVector &a, const CostVector &b) const{
         for(int i = 0; i < a.size(); i++){
             if(a.at(i) != b.at(i)){
                 return a.at(i) < b.at(i);
@@ -36,6 +36,7 @@ inline CostVector vector_min(CostVector& a, CostVector& b){
     }
     return min_vector;
 }
+
 
 inline double calculate_BF(CostVector& a, CostVector& b){
     double eps = 0;

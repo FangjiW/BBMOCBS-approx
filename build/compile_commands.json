@@ -1,0 +1,110 @@
+[
+{
+  "directory": "/home/fwang406/Codes/BBMOCBS-approx/build",
+  "command": "/usr/bin/g++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_CHRONO_DYN_LINK -DBOOST_CHRONO_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_LOG_DYN_LINK -DBOOST_LOG_NO_LIB -DBOOST_PROGRAM_OPTIONS_DYN_LINK -DBOOST_PROGRAM_OPTIONS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_DYN_LINK -DBOOST_THREAD_NO_LIB -I/home/fwang406/Codes/BBMOCBS-approx/inc -isystem /home/fwang406/opt/miniconda3/include  -g -Wall -g -std=gnu++14 -o CMakeFiles/bbmocbs_approx.dir/src/main.cpp.o -c /home/fwang406/Codes/BBMOCBS-approx/src/main.cpp",
+  "file": "/home/fwang406/Codes/BBMOCBS-approx/src/main.cpp",
+  "output": "CMakeFiles/bbmocbs_approx.dir/src/main.cpp.o"
+},
+{
+  "directory": "/home/fwang406/Codes/BBMOCBS-approx/build",
+  "command": "/usr/bin/g++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_CHRONO_DYN_LINK -DBOOST_CHRONO_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_LOG_DYN_LINK -DBOOST_LOG_NO_LIB -DBOOST_PROGRAM_OPTIONS_DYN_LINK -DBOOST_PROGRAM_OPTIONS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_DYN_LINK -DBOOST_THREAD_NO_LIB -I/home/fwang406/Codes/BBMOCBS-approx/inc -isystem /home/fwang406/opt/miniconda3/include  -g -Wall -g -std=gnu++14 -o CMakeFiles/bbmocbs_approx.dir/src/Definitions.cpp.o -c /home/fwang406/Codes/BBMOCBS-approx/src/Definitions.cpp",
+  "file": "/home/fwang406/Codes/BBMOCBS-approx/src/Definitions.cpp",
+  "output": "CMakeFiles/bbmocbs_approx.dir/src/Definitions.cpp.o"
+},
+{
+  "directory": "/home/fwang406/Codes/BBMOCBS-approx/build",
+  "command": "/usr/bin/g++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_CHRONO_DYN_LINK -DBOOST_CHRONO_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_LOG_DYN_LINK -DBOOST_LOG_NO_LIB -DBOOST_PROGRAM_OPTIONS_DYN_LINK -DBOOST_PROGRAM_OPTIONS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_DYN_LINK -DBOOST_THREAD_NO_LIB -I/home/fwang406/Codes/BBMOCBS-approx/inc -isystem /home/fwang406/opt/miniconda3/include  -g -Wall -g -std=gnu++14 -o CMakeFiles/bbmocbs_approx.dir/src/HighLevel/ConflictResolver.cpp.o -c /home/fwang406/Codes/BBMOCBS-approx/src/HighLevel/ConflictResolver.cpp",
+  "file": "/home/fwang406/Codes/BBMOCBS-approx/src/HighLevel/ConflictResolver.cpp",
+  "output": "CMakeFiles/bbmocbs_approx.dir/src/HighLevel/ConflictResolver.cpp.o"
+},
+{
+  "directory": "/home/fwang406/Codes/BBMOCBS-approx/build",
+  "command": "/usr/bin/g++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_CHRONO_DYN_LINK -DBOOST_CHRONO_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_LOG_DYN_LINK -DBOOST_LOG_NO_LIB -DBOOST_PROGRAM_OPTIONS_DYN_LINK -DBOOST_PROGRAM_OPTIONS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_DYN_LINK -DBOOST_THREAD_NO_LIB -I/home/fwang406/Codes/BBMOCBS-approx/inc -isystem /home/fwang406/opt/miniconda3/include  -g -Wall -g -std=gnu++14 -o CMakeFiles/bbmocbs_approx.dir/src/HighLevel/HighLevelSolver.cpp.o -c /home/fwang406/Codes/BBMOCBS-approx/src/HighLevel/HighLevelSolver.cpp",
+  "file": "/home/fwang406/Codes/BBMOCBS-approx/src/HighLevel/HighLevelSolver.cpp",
+  "output": "CMakeFiles/bbmocbs_approx.dir/src/HighLevel/HighLevelSolver.cpp.o"
+},
+{
+  "directory": "/home/fwang406/Codes/BBMOCBS-approx/build",
+  "command": "/usr/bin/g++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_CHRONO_DYN_LINK -DBOOST_CHRONO_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_LOG_DYN_LINK -DBOOST_LOG_NO_LIB -DBOOST_PROGRAM_OPTIONS_DYN_LINK -DBOOST_PROGRAM_OPTIONS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_DYN_LINK -DBOOST_THREAD_NO_LIB -I/home/fwang406/Codes/BBMOCBS-approx/inc -isystem /home/fwang406/opt/miniconda3/include  -g -Wall -g -std=gnu++14 -o CMakeFiles/bbmocbs_approx.dir/src/HighLevel/epsSolver.cpp.o -c /home/fwang406/Codes/BBMOCBS-approx/src/HighLevel/epsSolver.cpp",
+  "file": "/home/fwang406/Codes/BBMOCBS-approx/src/HighLevel/epsSolver.cpp",
+  "output": "CMakeFiles/bbmocbs_approx.dir/src/HighLevel/epsSolver.cpp.o"
+},
+{
+  "directory": "/home/fwang406/Codes/BBMOCBS-approx/build",
+  "command": "/usr/bin/g++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_CHRONO_DYN_LINK -DBOOST_CHRONO_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_LOG_DYN_LINK -DBOOST_LOG_NO_LIB -DBOOST_PROGRAM_OPTIONS_DYN_LINK -DBOOST_PROGRAM_OPTIONS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_DYN_LINK -DBOOST_THREAD_NO_LIB -I/home/fwang406/Codes/BBMOCBS-approx/inc -isystem /home/fwang406/opt/miniconda3/include  -g -Wall -g -std=gnu++14 -o CMakeFiles/bbmocbs_approx.dir/src/HighLevel/kSolver.cpp.o -c /home/fwang406/Codes/BBMOCBS-approx/src/HighLevel/kSolver.cpp",
+  "file": "/home/fwang406/Codes/BBMOCBS-approx/src/HighLevel/kSolver.cpp",
+  "output": "CMakeFiles/bbmocbs_approx.dir/src/HighLevel/kSolver.cpp.o"
+},
+{
+  "directory": "/home/fwang406/Codes/BBMOCBS-approx/build",
+  "command": "/usr/bin/g++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_CHRONO_DYN_LINK -DBOOST_CHRONO_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_LOG_DYN_LINK -DBOOST_LOG_NO_LIB -DBOOST_PROGRAM_OPTIONS_DYN_LINK -DBOOST_PROGRAM_OPTIONS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_DYN_LINK -DBOOST_THREAD_NO_LIB -I/home/fwang406/Codes/BBMOCBS-approx/inc -isystem /home/fwang406/opt/miniconda3/include  -g -Wall -g -std=gnu++14 -o CMakeFiles/bbmocbs_approx.dir/src/HighLevel/pexSolver.cpp.o -c /home/fwang406/Codes/BBMOCBS-approx/src/HighLevel/pexSolver.cpp",
+  "file": "/home/fwang406/Codes/BBMOCBS-approx/src/HighLevel/pexSolver.cpp",
+  "output": "CMakeFiles/bbmocbs_approx.dir/src/HighLevel/pexSolver.cpp.o"
+},
+{
+  "directory": "/home/fwang406/Codes/BBMOCBS-approx/build",
+  "command": "/usr/bin/g++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_CHRONO_DYN_LINK -DBOOST_CHRONO_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_LOG_DYN_LINK -DBOOST_LOG_NO_LIB -DBOOST_PROGRAM_OPTIONS_DYN_LINK -DBOOST_PROGRAM_OPTIONS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_DYN_LINK -DBOOST_THREAD_NO_LIB -I/home/fwang406/Codes/BBMOCBS-approx/inc -isystem /home/fwang406/opt/miniconda3/include  -g -Wall -g -std=gnu++14 -o CMakeFiles/bbmocbs_approx.dir/src/IOUtils.cpp.o -c /home/fwang406/Codes/BBMOCBS-approx/src/IOUtils.cpp",
+  "file": "/home/fwang406/Codes/BBMOCBS-approx/src/IOUtils.cpp",
+  "output": "CMakeFiles/bbmocbs_approx.dir/src/IOUtils.cpp.o"
+},
+{
+  "directory": "/home/fwang406/Codes/BBMOCBS-approx/build",
+  "command": "/usr/bin/g++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_CHRONO_DYN_LINK -DBOOST_CHRONO_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_LOG_DYN_LINK -DBOOST_LOG_NO_LIB -DBOOST_PROGRAM_OPTIONS_DYN_LINK -DBOOST_PROGRAM_OPTIONS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_DYN_LINK -DBOOST_THREAD_NO_LIB -I/home/fwang406/Codes/BBMOCBS-approx/inc -isystem /home/fwang406/opt/miniconda3/include  -g -Wall -g -std=gnu++14 -o CMakeFiles/bbmocbs_approx.dir/src/LowLevel/AbstractSolver.cpp.o -c /home/fwang406/Codes/BBMOCBS-approx/src/LowLevel/AbstractSolver.cpp",
+  "file": "/home/fwang406/Codes/BBMOCBS-approx/src/LowLevel/AbstractSolver.cpp",
+  "output": "CMakeFiles/bbmocbs_approx.dir/src/LowLevel/AbstractSolver.cpp.o"
+},
+{
+  "directory": "/home/fwang406/Codes/BBMOCBS-approx/build",
+  "command": "/usr/bin/g++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_CHRONO_DYN_LINK -DBOOST_CHRONO_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_LOG_DYN_LINK -DBOOST_LOG_NO_LIB -DBOOST_PROGRAM_OPTIONS_DYN_LINK -DBOOST_PROGRAM_OPTIONS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_DYN_LINK -DBOOST_THREAD_NO_LIB -I/home/fwang406/Codes/BBMOCBS-approx/inc -isystem /home/fwang406/opt/miniconda3/include  -g -Wall -g -std=gnu++14 -o CMakeFiles/bbmocbs_approx.dir/src/LowLevel/ApexSearch.cpp.o -c /home/fwang406/Codes/BBMOCBS-approx/src/LowLevel/ApexSearch.cpp",
+  "file": "/home/fwang406/Codes/BBMOCBS-approx/src/LowLevel/ApexSearch.cpp",
+  "output": "CMakeFiles/bbmocbs_approx.dir/src/LowLevel/ApexSearch.cpp.o"
+},
+{
+  "directory": "/home/fwang406/Codes/BBMOCBS-approx/build",
+  "command": "/usr/bin/g++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_CHRONO_DYN_LINK -DBOOST_CHRONO_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_LOG_DYN_LINK -DBOOST_LOG_NO_LIB -DBOOST_PROGRAM_OPTIONS_DYN_LINK -DBOOST_PROGRAM_OPTIONS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_DYN_LINK -DBOOST_THREAD_NO_LIB -I/home/fwang406/Codes/BBMOCBS-approx/inc -isystem /home/fwang406/opt/miniconda3/include  -g -Wall -g -std=gnu++14 -o CMakeFiles/bbmocbs_approx.dir/src/LowLevel/BOAStar.cpp.o -c /home/fwang406/Codes/BBMOCBS-approx/src/LowLevel/BOAStar.cpp",
+  "file": "/home/fwang406/Codes/BBMOCBS-approx/src/LowLevel/BOAStar.cpp",
+  "output": "CMakeFiles/bbmocbs_approx.dir/src/LowLevel/BOAStar.cpp.o"
+},
+{
+  "directory": "/home/fwang406/Codes/BBMOCBS-approx/build",
+  "command": "/usr/bin/g++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_CHRONO_DYN_LINK -DBOOST_CHRONO_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_LOG_DYN_LINK -DBOOST_LOG_NO_LIB -DBOOST_PROGRAM_OPTIONS_DYN_LINK -DBOOST_PROGRAM_OPTIONS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_DYN_LINK -DBOOST_THREAD_NO_LIB -I/home/fwang406/Codes/BBMOCBS-approx/inc -isystem /home/fwang406/opt/miniconda3/include  -g -Wall -g -std=gnu++14 -o CMakeFiles/bbmocbs_approx.dir/src/LowLevel/DominanceChecker.cpp.o -c /home/fwang406/Codes/BBMOCBS-approx/src/LowLevel/DominanceChecker.cpp",
+  "file": "/home/fwang406/Codes/BBMOCBS-approx/src/LowLevel/DominanceChecker.cpp",
+  "output": "CMakeFiles/bbmocbs_approx.dir/src/LowLevel/DominanceChecker.cpp.o"
+},
+{
+  "directory": "/home/fwang406/Codes/BBMOCBS-approx/build",
+  "command": "/usr/bin/g++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_CHRONO_DYN_LINK -DBOOST_CHRONO_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_LOG_DYN_LINK -DBOOST_LOG_NO_LIB -DBOOST_PROGRAM_OPTIONS_DYN_LINK -DBOOST_PROGRAM_OPTIONS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_DYN_LINK -DBOOST_THREAD_NO_LIB -I/home/fwang406/Codes/BBMOCBS-approx/inc -isystem /home/fwang406/opt/miniconda3/include  -g -Wall -g -std=gnu++14 -o CMakeFiles/bbmocbs_approx.dir/src/LowLevel/NAMOA.cpp.o -c /home/fwang406/Codes/BBMOCBS-approx/src/LowLevel/NAMOA.cpp",
+  "file": "/home/fwang406/Codes/BBMOCBS-approx/src/LowLevel/NAMOA.cpp",
+  "output": "CMakeFiles/bbmocbs_approx.dir/src/LowLevel/NAMOA.cpp.o"
+},
+{
+  "directory": "/home/fwang406/Codes/BBMOCBS-approx/build",
+  "command": "/usr/bin/g++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_CHRONO_DYN_LINK -DBOOST_CHRONO_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_LOG_DYN_LINK -DBOOST_LOG_NO_LIB -DBOOST_PROGRAM_OPTIONS_DYN_LINK -DBOOST_PROGRAM_OPTIONS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_DYN_LINK -DBOOST_THREAD_NO_LIB -I/home/fwang406/Codes/BBMOCBS-approx/inc -isystem /home/fwang406/opt/miniconda3/include  -g -Wall -g -std=gnu++14 -o CMakeFiles/bbmocbs_approx.dir/src/LowLevel/RunApex.cpp.o -c /home/fwang406/Codes/BBMOCBS-approx/src/LowLevel/RunApex.cpp",
+  "file": "/home/fwang406/Codes/BBMOCBS-approx/src/LowLevel/RunApex.cpp",
+  "output": "CMakeFiles/bbmocbs_approx.dir/src/LowLevel/RunApex.cpp.o"
+},
+{
+  "directory": "/home/fwang406/Codes/BBMOCBS-approx/build",
+  "command": "/usr/bin/g++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_CHRONO_DYN_LINK -DBOOST_CHRONO_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_LOG_DYN_LINK -DBOOST_LOG_NO_LIB -DBOOST_PROGRAM_OPTIONS_DYN_LINK -DBOOST_PROGRAM_OPTIONS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_DYN_LINK -DBOOST_THREAD_NO_LIB -I/home/fwang406/Codes/BBMOCBS-approx/inc -isystem /home/fwang406/opt/miniconda3/include  -g -Wall -g -std=gnu++14 -o CMakeFiles/bbmocbs_approx.dir/src/LowLevel/ShortestPathHeuristic.cpp.o -c /home/fwang406/Codes/BBMOCBS-approx/src/LowLevel/ShortestPathHeuristic.cpp",
+  "file": "/home/fwang406/Codes/BBMOCBS-approx/src/LowLevel/ShortestPathHeuristic.cpp",
+  "output": "CMakeFiles/bbmocbs_approx.dir/src/LowLevel/ShortestPathHeuristic.cpp.o"
+},
+{
+  "directory": "/home/fwang406/Codes/BBMOCBS-approx/build",
+  "command": "/usr/bin/g++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_CHRONO_DYN_LINK -DBOOST_CHRONO_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_LOG_DYN_LINK -DBOOST_LOG_NO_LIB -DBOOST_PROGRAM_OPTIONS_DYN_LINK -DBOOST_PROGRAM_OPTIONS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_DYN_LINK -DBOOST_THREAD_NO_LIB -I/home/fwang406/Codes/BBMOCBS-approx/inc -isystem /home/fwang406/opt/miniconda3/include  -g -Wall -g -std=gnu++14 -o CMakeFiles/bbmocbs_approx.dir/src/LowLevel/Utils/Logger.cpp.o -c /home/fwang406/Codes/BBMOCBS-approx/src/LowLevel/Utils/Logger.cpp",
+  "file": "/home/fwang406/Codes/BBMOCBS-approx/src/LowLevel/Utils/Logger.cpp",
+  "output": "CMakeFiles/bbmocbs_approx.dir/src/LowLevel/Utils/Logger.cpp.o"
+},
+{
+  "directory": "/home/fwang406/Codes/BBMOCBS-approx/build",
+  "command": "/usr/bin/g++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_CHRONO_DYN_LINK -DBOOST_CHRONO_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_LOG_DYN_LINK -DBOOST_LOG_NO_LIB -DBOOST_PROGRAM_OPTIONS_DYN_LINK -DBOOST_PROGRAM_OPTIONS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_DYN_LINK -DBOOST_THREAD_NO_LIB -I/home/fwang406/Codes/BBMOCBS-approx/inc -isystem /home/fwang406/opt/miniconda3/include  -g -Wall -g -std=gnu++14 -o CMakeFiles/bbmocbs_approx.dir/src/LowLevel/Utils/MapQueue.cpp.o -c /home/fwang406/Codes/BBMOCBS-approx/src/LowLevel/Utils/MapQueue.cpp",
+  "file": "/home/fwang406/Codes/BBMOCBS-approx/src/LowLevel/Utils/MapQueue.cpp",
+  "output": "CMakeFiles/bbmocbs_approx.dir/src/LowLevel/Utils/MapQueue.cpp.o"
+},
+{
+  "directory": "/home/fwang406/Codes/BBMOCBS-approx/build",
+  "command": "/usr/bin/g++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_CHRONO_DYN_LINK -DBOOST_CHRONO_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_LOG_DYN_LINK -DBOOST_LOG_NO_LIB -DBOOST_PROGRAM_OPTIONS_DYN_LINK -DBOOST_PROGRAM_OPTIONS_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_DYN_LINK -DBOOST_THREAD_NO_LIB -I/home/fwang406/Codes/BBMOCBS-approx/inc -isystem /home/fwang406/opt/miniconda3/include  -g -Wall -g -std=gnu++14 -o CMakeFiles/bbmocbs_approx.dir/src/LowLevel/Utils/apex.cpp.o -c /home/fwang406/Codes/BBMOCBS-approx/src/LowLevel/Utils/apex.cpp",
+  "file": "/home/fwang406/Codes/BBMOCBS-approx/src/LowLevel/Utils/apex.cpp",
+  "output": "CMakeFiles/bbmocbs_approx.dir/src/LowLevel/Utils/apex.cpp.o"
+}
+]
