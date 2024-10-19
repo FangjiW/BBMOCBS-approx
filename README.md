@@ -1,7 +1,7 @@
 # BB-MO-CBS-approx
 
 To compile:
-We C++ implemented BB-MO-CBS-pex, BB-MO-CBS-k, BB-MO-CBS-approx , as well as re-implemented BB-MO-CBS. We implemented eager-solution update for BB-MO-CBS-$\varepsilon$, BB-MO-CBS-pex, and BB-MO-CBS-k, and conflict-based merging for BB-MO-CBS-pex and BB-MO-CBS-k.
+We C++ implemented BB-MO-CBS-pex, BB-MO-CBS-k, BB-MO-CBS-approx , as well as re-implemented BB-MO-CBS. We implemented eager-solution update for BB-MO-CBS-approx, BB-MO-CBS-pex, and BB-MO-CBS-k, and conflict-based merging for BB-MO-CBS-pex and BB-MO-CBS-k.
 
 The low level of BB-MO-CBS and BB-MO-CBS-approx are implemented with BOA* for bi-objective domains and NAMOA*dr for $\geq3$-obejctive domains.
 
